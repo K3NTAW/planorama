@@ -3,6 +3,8 @@ import { PrismaClient } from '@prisma/client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from 'next/link';
 import { format } from 'date-fns';
+import { CreateTripButton } from '@/components/ui/CreateTripButton';
+import { revalidatePath } from 'next/cache';
 
 const prisma = new PrismaClient();
 
@@ -18,9 +20,16 @@ export default async function DashboardPage() {
     orderBy: { startDate: 'asc' }
   });
 
+  // Function to refresh the dashboard after creating a trip
+  async function handleTripCreated() {
+    'use server';
+    revalidatePath('/dashboard');
+  }
+
   return (
     <div className="max-w-3xl mx-auto p-6">
       <h1 className="text-3xl font-bold mb-6">Your Trips</h1>
+      <CreateTripButton onTripCreated={handleTripCreated} />
       <div className="grid gap-4">
         {trips.length === 0 ? (
           <div className="text-gray-500">No trips found. Start by creating a new trip!</div>

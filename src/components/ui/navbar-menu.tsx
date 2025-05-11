@@ -168,6 +168,12 @@ function ThemeSwitcher() {
 
 export function Navbar({ className }: { className?: string }) {
   const [active, setActive] = useState<string | null>(null);
+  const [trips, setTrips] = useState<{ id: string; name: string }[]>([]);
+  useEffect(() => {
+    fetch("/api/trips")
+      .then(res => res.ok ? res.json() : [])
+      .then(data => setTrips(Array.isArray(data) ? data : []));
+  }, []);
   return (
     <div
       className={cn(
@@ -185,20 +191,19 @@ export function Navbar({ className }: { className?: string }) {
           </>
         }
       >
-        <MenuItem setActive={setActive} active={active} item="Services">
-          <div className="flex flex-col space-y-4 text-sm">
-            <HoveredLink href="/web-dev">Web Development</HoveredLink>
-            <HoveredLink href="/interface-design">Interface Design</HoveredLink>
-            <HoveredLink href="/seo">Search Engine Optimization</HoveredLink>
-            <HoveredLink href="/branding">Branding</HoveredLink>
-          </div>
-        </MenuItem>
-        <MenuItem setActive={setActive} active={active} item="Pricing">
-          <div className="flex flex-col space-y-4 text-sm">
-            <HoveredLink href="/hobby">Hobby</HoveredLink>
-            <HoveredLink href="/individual">Individual</HoveredLink>
-            <HoveredLink href="/team">Team</HoveredLink>
-            <HoveredLink href="/enterprise">Enterprise</HoveredLink>
+        <MenuItem setActive={setActive} active={active} item="Trips">
+          <div className="flex flex-col space-y-2 text-sm min-w-[180px]">
+            <HoveredLink href="/dashboard">Your Trips</HoveredLink>
+            {trips.length > 0 ? (
+              <>
+                <div className="border-t border-border my-2" />
+                {trips.map(trip => (
+                  <HoveredLink key={trip.id} href={`/trips/${trip.id}`}>{trip.name}</HoveredLink>
+                ))}
+              </>
+            ) : (
+              <div className="text-muted-foreground text-xs">No trips found</div>
+            )}
           </div>
         </MenuItem>
       </Menu>

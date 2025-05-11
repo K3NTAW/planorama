@@ -1,4 +1,3 @@
-// Vercel supports next.config.ts natively. No need for next.config.js unless you have a custom build setup.
 const withPWA = require('next-pwa')({
   dest: 'public',
   register: true,
@@ -17,4 +16,4 @@ const nextConfig = {
   /* config options here */
 };
 
-module.exports = withPWA(nextConfig);
+module.exports = withPWA(nextConfig); 

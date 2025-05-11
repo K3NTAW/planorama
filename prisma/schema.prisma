@@ -28,9 +28,11 @@ model Trip {
   destination String
   startDate   DateTime
   endDate     DateTime
+  bannerUrl   String?
   itineraries Itinerary[]
   accommodations Accommodation[]
   media       Media[]
+  places      Place[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -109,4 +111,17 @@ model ListItem {
   link       String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+}
+
+model Place {
+  id        String   @id @default(cuid())
+  trip      Trip     @relation(fields: [tripId], references: [id])
+  tripId    String
+  name      String
+  type      String
+  address   String?
+  link      String?
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
