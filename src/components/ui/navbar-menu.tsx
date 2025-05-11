@@ -123,11 +123,11 @@ export const ProductItem = ({
   );
 };
 
-export const HoveredLink = ({ children, ...rest }: React.PropsWithChildren<NextLinkProps>) => {
+export const HoveredLink = ({ children, className, ...rest }: React.PropsWithChildren<NextLinkProps> & { className?: string }) => {
   return (
     <Link
       {...rest}
-      className="text-muted-foreground hover:text-foreground"
+      className={cn("text-muted-foreground hover:text-foreground", className)}
     >
       {children}
     </Link>
@@ -168,7 +168,7 @@ function ThemeSwitcher() {
 
 export function Navbar({ className }: { className?: string }) {
   const [active, setActive] = useState<string | null>(null);
-  const [trips, setTrips] = useState<{ id: string; name: string }[]>([]);
+  const [trips, setTrips] = useState<{ id: string; name: string; bannerUrl?: string }[]>([]);
   useEffect(() => {
     fetch("/api/trips")
       .then(res => res.ok ? res.json() : [])
@@ -192,13 +192,24 @@ export function Navbar({ className }: { className?: string }) {
         }
       >
         <MenuItem setActive={setActive} active={active} item="Trips">
-          <div className="flex flex-col space-y-2 text-sm min-w-[180px]">
+          <div className="flex flex-col space-y-2 text-sm min-w-[220px]">
             <HoveredLink href="/dashboard">Your Trips</HoveredLink>
             {trips.length > 0 ? (
               <>
                 <div className="border-t border-border my-2" />
                 {trips.map(trip => (
-                  <HoveredLink key={trip.id} href={`/trips/${trip.id}`}>{trip.name}</HoveredLink>
+                  <HoveredLink key={trip.id} href={`/trips/${trip.id}`}
+                    className="flex items-center gap-2 px-1 py-1 rounded hover:bg-accent transition-colors"
+                  >
+                    {trip.bannerUrl && (
+                      <img
+                        src={trip.bannerUrl}
+                        alt={trip.name}
+                        className="w-10 h-10 object-cover rounded shadow border border-border"
+                      />
+                    )}
+                    <span className="truncate max-w-[120px]">{trip.name}</span>
+                  </HoveredLink>
                 ))}
               </>
             ) : (

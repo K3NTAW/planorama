@@ -5,8 +5,19 @@ import Link from 'next/link';
 import { format } from 'date-fns';
 import { CreateTripButton } from '@/components/ui/CreateTripButton';
 import { revalidatePath } from 'next/cache';
+import Image from 'next/image';
+import { TripDeleteButton } from '@/components/ui/TripDeleteButton';
 
 const prisma = new PrismaClient();
+
+type Trip = {
+  id: string;
+  name: string;
+  destination: string;
+  startDate: Date;
+  endDate: Date;
+  bannerUrl: string | null;
+};
 
 export default async function DashboardPage() {
   const user = await currentUser();
@@ -34,18 +45,28 @@ export default async function DashboardPage() {
         {trips.length === 0 ? (
           <div className="text-gray-500">No trips found. Start by creating a new trip!</div>
         ) : (
-          trips.map(trip => (
-            <Card key={trip.id}>
+          trips.map((trip: Trip) => (
+            <Card key={trip.id} className="relative">
               <CardHeader>
+                {trip.bannerUrl && (
+                  <Image
+                    src={trip.bannerUrl}
+                    alt={trip.name}
+                    width={600}
+                    height={160}
+                    className="w-full h-40 object-cover rounded-t-md mb-2 border border-border"
+                  />
+                )}
                 <CardTitle>{trip.name}</CardTitle>
+                <TripDeleteButton tripId={trip.id} onDeleted={handleTripCreated} />
               </CardHeader>
               <CardContent>
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                   <div>
                     <div className="text-gray-600">Destination: {trip.destination}</div>
                     <div className="text-gray-500 text-sm">
-                      {trip.startDate ? format(new Date(trip.startDate), 'yyyy-MM-dd') : ''}
-                      {trip.endDate ? ` - ${format(new Date(trip.endDate), 'yyyy-MM-dd')}` : ''}
+                      {trip.startDate ? format(trip.startDate, 'yyyy-MM-dd') : ''}
+                      {trip.endDate ? ` - ${format(trip.endDate, 'yyyy-MM-dd')}` : ''}
                     </div>
                   </div>
                   <Link href={`/trips/${trip.id}`} className="mt-2 md:mt-0 text-blue-600 hover:underline">View Details</Link>

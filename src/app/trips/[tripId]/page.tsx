@@ -4,6 +4,7 @@ import { format } from 'date-fns';
 import { notFound } from 'next/navigation';
 import { TripAccommodations } from '@/components/ui/TripAccommodations';
 import { TripPlaces } from '@/components/ui/TripPlaces';
+import Image from 'next/image';
 
 const prisma = new PrismaClient();
 
@@ -18,6 +19,15 @@ export default async function TripDetailsPage(props: any) {
 
   return (
     <div className="max-w-3xl mx-auto p-6">
+      {trip.bannerUrl && (
+        <Image
+          src={trip.bannerUrl}
+          alt={trip.name}
+          width={800}
+          height={224}
+          className="w-full h-56 object-cover rounded-md mb-6 border border-border"
+        />
+      )}
       <div className="mb-6">
         <h1 className="text-3xl font-bold mb-2">{trip.name}</h1>
         <div className="text-lg text-gray-600 mb-1">Destination: {trip.destination}</div>
