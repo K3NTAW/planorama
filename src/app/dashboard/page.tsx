@@ -2,6 +2,7 @@ import { currentUser } from '@clerk/nextjs/server';
 import { PrismaClient } from '@prisma/client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from 'next/link';
+import { format } from 'date-fns';
 
 const prisma = new PrismaClient();
 
@@ -34,8 +35,8 @@ export default async function DashboardPage() {
                   <div>
                     <div className="text-gray-600">Destination: {trip.destination}</div>
                     <div className="text-gray-500 text-sm">
-                      {trip.startDate ? new Date(trip.startDate).toLocaleDateString() : ''}
-                      {trip.endDate ? ` - ${new Date(trip.endDate).toLocaleDateString()}` : ''}
+                      {trip.startDate ? format(new Date(trip.startDate), 'yyyy-MM-dd') : ''}
+                      {trip.endDate ? ` - ${format(new Date(trip.endDate), 'yyyy-MM-dd')}` : ''}
                     </div>
                   </div>
                   <Link href={`/trips/${trip.id}`} className="mt-2 md:mt-0 text-blue-600 hover:underline">View Details</Link>
