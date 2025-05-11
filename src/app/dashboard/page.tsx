@@ -6,7 +6,6 @@ import { format } from 'date-fns';
 import { CreateTripButton } from '@/components/ui/CreateTripButton';
 import { revalidatePath } from 'next/cache';
 import Image from 'next/image';
-import { TripDeleteButton } from '@/components/ui/TripDeleteButton';
 
 const prisma = new PrismaClient();
 
@@ -17,6 +16,7 @@ type Trip = {
   startDate: Date;
   endDate: Date;
   bannerUrl: string | null;
+  userId: string;
 };
 
 export default async function DashboardPage() {
@@ -27,7 +27,12 @@ export default async function DashboardPage() {
 
   // Fetch trips for the logged-in user
   const trips = await prisma.trip.findMany({
-    where: { userId: user.id },
+    where: {
+      OR: [
+        { userId: user.id },
+        { sharedWith: { some: { userId: user.id } } }
+      ]
+    },
     orderBy: { startDate: 'asc' }
   });
 
@@ -45,35 +50,42 @@ export default async function DashboardPage() {
         {trips.length === 0 ? (
           <div className="text-gray-500">No trips found. Start by creating a new trip!</div>
         ) : (
-          trips.map((trip: Trip) => (
-            <Card key={trip.id} className="relative">
-              <CardHeader>
-                {trip.bannerUrl && (
-                  <Image
-                    src={trip.bannerUrl}
-                    alt={trip.name}
-                    width={600}
-                    height={160}
-                    className="w-full h-40 object-cover rounded-t-md mb-2 border border-border"
-                  />
-                )}
-                <CardTitle>{trip.name}</CardTitle>
-                <TripDeleteButton tripId={trip.id} onDeleted={handleTripCreated} />
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                  <div>
-                    <div className="text-gray-600">Destination: {trip.destination}</div>
-                    <div className="text-gray-500 text-sm">
-                      {trip.startDate ? format(trip.startDate, 'yyyy-MM-dd') : ''}
-                      {trip.endDate ? ` - ${format(trip.endDate, 'yyyy-MM-dd')}` : ''}
-                    </div>
+          trips.map((trip: Trip) => {
+            const isOwner = trip.userId === user.id;
+            return (
+              <Card key={trip.id} className="relative">
+                <CardHeader>
+                  {trip.bannerUrl && (
+                    <Image
+                      src={trip.bannerUrl}
+                      alt={trip.name}
+                      width={600}
+                      height={160}
+                      className="w-full h-40 object-cover rounded-t-md mb-2 border border-border"
+                    />
+                  )}
+                  <div className="flex items-center gap-2">
+                    <CardTitle>{trip.name}</CardTitle>
+                    {!isOwner && (
+                      <span className="ml-2 px-2 py-0.5 text-xs rounded bg-yellow-100 text-yellow-800 border border-yellow-300">Collaborator</span>
+                    )}
                   </div>
-                  <Link href={`/trips/${trip.id}`} className="mt-2 md:mt-0 text-blue-600 hover:underline">View Details</Link>
-                </div>
-              </CardContent>
-            </Card>
-          ))
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                    <div>
+                      <div className="text-gray-600">Destination: {trip.destination}</div>
+                      <div className="text-gray-500 text-sm">
+                        {trip.startDate ? format(trip.startDate, 'yyyy-MM-dd') : ''}
+                        {trip.endDate ? ` - ${format(trip.endDate, 'yyyy-MM-dd')}` : ''}
+                      </div>
+                    </div>
+                    <Link href={`/trips/${trip.id}`} className="mt-2 md:mt-0 text-blue-600 hover:underline">View Details</Link>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })
         )}
       </div>
     </div>

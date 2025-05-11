@@ -18,6 +18,7 @@ model User {
   sharedLists SharedList[]
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+  sharedTrips TripShare[]
 }
 
 model Trip {
@@ -35,6 +36,8 @@ model Trip {
   places      Place[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  sharedWith  TripShare[]
+  invites     TripInvite[]
 }
 
 model Itinerary {
@@ -124,4 +127,30 @@ model Place {
   notes     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model TripShare {
+  id        String   @id @default(uuid())
+  trip      Trip     @relation(fields: [tripId], references: [id])
+  tripId    String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  canEdit   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tripId, userId])
+}
+
+model TripInvite {
+  id              String   @id @default(uuid())
+  trip            Trip     @relation(fields: [tripId], references: [id])
+  tripId          String
+  inviteToken     String   @unique
+  permissionLevel String   // "view" or "edit"
+  invitedEmail    String?
+  createdAt       DateTime @default(now())
+  accepted        Boolean  @default(false)
+  acceptedBy      String?
+  acceptedAt      DateTime?
 }
