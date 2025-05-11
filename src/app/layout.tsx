@@ -28,6 +28,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#2563eb" />
+      </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-brand-50 dark:bg-brand-900 min-h-screen`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <ClerkProvider>
