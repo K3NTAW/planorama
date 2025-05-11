@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import Link, { LinkProps as NextLinkProps } from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { DemoProfileButton } from "@/components/ui/demo-profile-button";
+import { ProfileMenu } from "@/components/ui/ProfileMenu";
 import { useTheme } from "next-themes";
 import { Sun, Moon, Laptop } from "lucide-react";
 
@@ -181,7 +181,7 @@ export function Navbar({ className }: { className?: string }) {
         right={
           <>
             <ThemeSwitcher />
-            <DemoProfileButton />
+            <ProfileMenu />
           </>
         }
       >
