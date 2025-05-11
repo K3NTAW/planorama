@@ -1,5 +1,9 @@
 // Vercel supports next.config.ts natively. No need for next.config.js unless you have a custom build setup.
-import withPWA from "next-pwa";
+const withPWA = require('next-pwa')({
+  dest: 'public',
+  register: true,
+  skipWaiting: true,
+});
 
 const nextConfig = {
   images: {
@@ -11,11 +15,6 @@ const nextConfig = {
     ],
   },
   /* config options here */
-  pwa: {
-    dest: "public",
-    register: true,
-    skipWaiting: true,
-  },
 };
 
-export default withPWA(nextConfig);
+module.exports = withPWA(nextConfig);
