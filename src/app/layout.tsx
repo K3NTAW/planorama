@@ -4,8 +4,7 @@ import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Navbar } from "@/components/ui/navbar-menu";
 import { ThemeProvider } from "next-themes";
-import { useSwipeable } from "react-swipeable";
-import { useRouter, usePathname } from "next/navigation";
+import { SwipeableMain } from "@/components/SwipeableMain";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,36 +26,15 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const pages = ["/dashboard", "/profile"];
-  const currentIndex = pages.indexOf(pathname);
-  const handlers = useSwipeable({
-    onSwipedLeft: () => {
-      if (currentIndex < pages.length - 1) {
-        router.push(pages[currentIndex + 1]);
-      }
-    },
-    onSwipedRight: () => {
-      if (currentIndex > 0) {
-        router.push(pages[currentIndex - 1]);
-      }
-    },
-    trackTouch: true,
-    trackMouse: false,
-  });
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-brand-50 dark:bg-brand-900 min-h-screen`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <ClerkProvider>
             <Navbar />
-            <main
-              {...handlers}
-              className="pt-32 pb-20 min-h-screen bg-brand-50 dark:bg-brand-900 text-brand-900 dark:text-brand-100"
-            >
+            <SwipeableMain>
               {children}
-            </main>
+            </SwipeableMain>
           </ClerkProvider>
         </ThemeProvider>
       </body>

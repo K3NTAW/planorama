@@ -1,5 +1,5 @@
 "use client";
-import { UserButton, useUser, SignOutButton } from '@clerk/nextjs';
+import { useUser, SignOutButton } from '@clerk/nextjs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from 'next/link';

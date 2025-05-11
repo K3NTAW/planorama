@@ -1,10 +1,10 @@
 import { Button } from "@/components/ui/button";
-import { ChevronDown } from "lucide-react";
+import Image from "next/image";
 
 function DemoProfileButton() {
   return (
     <Button variant="ghost" className="h-auto p-0 hover:bg-transparent">
-      <img
+      <Image
         className="rounded-full"
         src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=facearea&w=80&h=80&facepad=2"
         alt="Profile image"

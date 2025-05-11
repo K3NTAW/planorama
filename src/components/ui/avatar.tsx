@@ -1,5 +1,6 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
+import Image from "next/image"
 
 // AvatarProps interface removed as it was empty and redundant
 
@@ -15,20 +16,18 @@ const Avatar = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElem
 ))
 Avatar.displayName = "Avatar"
 
-const AvatarImage = React.forwardRef<
-  HTMLImageElement,
-  React.ImgHTMLAttributes<HTMLImageElement>
->(({ className, src, ...props }, ref) => {
+const AvatarImage = ({ className, src, alt = "", ...props }: { className?: string; src?: string; alt?: string } & React.ComponentProps<typeof Image>) => {
   if (!src) return null;
   return (
-    <img
-      ref={ref}
+    <Image
       className={cn("aspect-square h-full w-full", className)}
       src={src}
+      alt={alt}
+      fill
       {...props}
     />
   );
-})
+};
 AvatarImage.displayName = "AvatarImage"
 
 const AvatarFallback = React.forwardRef<
