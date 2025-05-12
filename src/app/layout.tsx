@@ -12,7 +12,7 @@ const inter = Inter({
 export const metadata = {
   title: 'Planorama',
   icons: {
-    icon: '/favicon.ico',
+    icon: '/planorama-logo.png',
   },
 };
 
