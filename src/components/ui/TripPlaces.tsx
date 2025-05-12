@@ -134,7 +134,7 @@ export function TripPlaces({ tripId }: { tripId: string }) {
           <div className="text-gray-500">No places added yet.</div>
         ) : (
           places.map(place => (
-            <div key={place.id} className="border rounded p-4 bg-white flex justify-between items-start gap-4">
+            <div key={place.id} className="border rounded p-4 bg-white dark:bg-card flex justify-between items-start gap-4">
               {editingId === place.id ? (
                 <div className="flex-1 space-y-2">
                   <div className="flex gap-2">

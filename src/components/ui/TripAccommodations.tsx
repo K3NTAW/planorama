@@ -138,7 +138,7 @@ export function TripAccommodations({ tripId }: { tripId: string }) {
           accommodations.map(acc => (
             <div
               key={acc.id}
-              className={`border rounded p-4 ${resolvedTheme === 'dark' ? 'bg-brand-900' : 'bg-white'} flex justify-between items-start gap-4`}
+              className={`border rounded p-4 bg-white dark:bg-card flex justify-between items-start gap-4`}
             >
               {editingId === acc.id ? (
                 <div className="flex-1 space-y-2">

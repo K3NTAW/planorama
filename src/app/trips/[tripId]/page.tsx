@@ -58,7 +58,7 @@ export default async function TripDetailsPage(props: any) {
           <div className="w-full max-w-full"><TripAccommodations tripId={tripId} /></div>
         </TabsContent>
         <TabsContent value="files">
-          <div className="p-4 border rounded bg-white w-full max-w-full">Files and links will go here.</div>
+          <div className="p-4 border rounded bg-white dark:bg-card w-full max-w-full">Files and links will go here.</div>
         </TabsContent>
         <TabsContent value="settings">
           <TripSettingsTab tripId={tripId} />
