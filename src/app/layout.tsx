@@ -28,6 +28,7 @@ export default async function RootLayout({
       <head>
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#2563eb" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/planorama-logo.png" />
       </head>
       <body className={`${inter.variable} antialiased bg-brand-50 dark:bg-brand-900 min-h-screen`}>
         <ClerkProvider>
