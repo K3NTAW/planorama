@@ -27,22 +27,23 @@ const profileSchema = z.object({
   username: z.string().min(2, { message: 'Username must be at least 2 characters.' }),
   email: z.string().email(),
   bio: z.string().max(160, { message: 'Bio must be at most 160 characters.' }).optional(),
-  urls: z.array(z.string().url().optional()).optional(),
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
 
 export default function ProfilePage() {
-  const { user } = useUser();
-  const [avatarUrl, setAvatarUrl] = useState(user?.imageUrl || '');
+  const { user, isLoaded } = useUser();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState(user?.imageUrl || '');
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const defaultValues: ProfileFormValues = {
     username: user?.username || user?.firstName || '',
     email: user?.primaryEmailAddress?.emailAddress || user?.emailAddresses?.[0]?.emailAddress || '',
     bio: '',
-    urls: [''],
   };
 
   const form = useForm<ProfileFormValues>({
@@ -51,7 +52,6 @@ export default function ProfilePage() {
     mode: 'onChange',
   });
 
-  // Keep form in sync with user data
   useEffect(() => {
     form.reset(defaultValues);
     setAvatarUrl(user?.imageUrl || '');
@@ -68,8 +68,36 @@ export default function ProfilePage() {
     { value: "system", icon: <Laptop size={18} />, label: "System" },
   ];
 
-  function onSubmit() {
-    // TODO: handle update
+  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAvatarFile(file);
+    setAvatarUrl(URL.createObjectURL(file));
+  }
+
+  async function onSubmit(values: ProfileFormValues) {
+    if (!user) return;
+    setIsUpdating(true);
+    try {
+      if (avatarFile) {
+        setIsUploading(true);
+        await user.setProfileImage({ file: avatarFile });
+        setIsUploading(false);
+      }
+      await user.update({
+        username: values.username,
+        unsafeMetadata: {
+          bio: values.bio || '',
+        },
+      });
+      setAvatarFile(null);
+      setIsUpdating(false);
+      window.location.reload();
+    } catch (err) {
+      setIsUploading(false);
+      setIsUpdating(false);
+      // Optionally show error toast
+    }
   }
 
   return (
@@ -93,7 +121,19 @@ export default function ProfilePage() {
                       <AvatarImage src={avatarUrl} alt={form.watch('username')} />
                       <AvatarFallback>{form.watch('username')?.[0]}</AvatarFallback>
                     </Avatar>
-                    <Button type="button" variant="outline" size="sm">Change avatar</Button>
+                    <label htmlFor="avatar-upload">
+                      <Button asChild type="button" variant="outline" size="sm" disabled={isUploading}>
+                        <span>{isUploading ? 'Uploading...' : 'Change avatar'}</span>
+                      </Button>
+                      <input
+                        id="avatar-upload"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleAvatarChange}
+                        disabled={isUploading}
+                      />
+                    </label>
                   </div>
                   {/* Username */}
                   <FormField
@@ -150,47 +190,8 @@ export default function ProfilePage() {
                       </FormItem>
                     )}
                   />
-                  {/* URLs */}
-                  <FormField
-                    control={form.control}
-                    name="urls"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>URLs</FormLabel>
-                        <FormDescription>
-                          Add links to your website, blog, or social media profiles.
-                        </FormDescription>
-                        <div className="space-y-2 w-full max-w-full">
-                          {(field.value || ['']).map((url, i) => (
-                            <Input
-                              key={i}
-                              value={url}
-                              onChange={e => {
-                                const newUrls = [...(field.value || [])];
-                                newUrls[i] = e.target.value;
-                                field.onChange(newUrls);
-                              }}
-                              placeholder="https://yourwebsite.com"
-                              type="url"
-                              className="w-full max-w-full"
-                            />
-                          ))}
-                        </div>
-                        <Button
-                          type="button"
-                          variant="link"
-                          size="sm"
-                          className="px-0"
-                          onClick={() => field.onChange([...(field.value || []), ''])}
-                        >
-                          Add URL
-                        </Button>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
                   {/* Update button */}
-                  <Button type="submit">Update profile</Button>
+                  <Button type="submit" disabled={isUpdating || isUploading}>{isUpdating ? 'Updating...' : 'Update profile'}</Button>
                 </form>
                 {/* Danger Zone */}
                 <DangerZone />
