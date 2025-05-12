@@ -8,12 +8,12 @@
   "description": "Planorama: Plan and manage your trips with ease!",
   "icons": [
     {
-      "src": "/planorama-icon-192.png",
+      "src": "/planorama-logo.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/planorama-icon-512.png",
+      "src": "/planorama-logo.png",
       "sizes": "512x512",
       "type": "image/png"
     }

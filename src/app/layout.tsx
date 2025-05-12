@@ -9,6 +9,13 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
+export const metadata = {
+  title: 'Planorama',
+  icons: {
+    icon: '/favicon.ico',
+  },
+};
+
 const AppMobileNav = dynamic(() => import("@/components/ui/AppMobileNav").then(mod => mod.AppMobileNav), { ssr: false });
 
 export default async function RootLayout({
