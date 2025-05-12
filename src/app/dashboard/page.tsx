@@ -43,17 +43,17 @@ export default async function DashboardPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto p-6">
+    <div className="max-w-3xl w-full mx-auto px-2 sm:px-4 md:px-6 py-6 overflow-x-hidden">
       <h1 className="text-3xl font-bold mb-6">Your Trips</h1>
       <CreateTripButton onTripCreated={handleTripCreated} />
-      <div className="grid gap-4">
+      <div className="grid gap-4 w-full max-w-full">
         {trips.length === 0 ? (
           <div className="text-gray-500">No trips found. Start by creating a new trip!</div>
         ) : (
           trips.map((trip: Trip) => {
             const isOwner = trip.userId === user.id;
             return (
-              <Card key={trip.id} className="relative">
+              <Card key={trip.id} className="relative w-full max-w-full">
                 <CardHeader>
                   {trip.bannerUrl && (
                     <Image
@@ -61,7 +61,7 @@ export default async function DashboardPage() {
                       alt={trip.name}
                       width={600}
                       height={160}
-                      className="w-full h-40 object-cover rounded-t-md mb-2 border border-border"
+                      className="w-full max-w-full h-40 object-cover rounded-t-md mb-2 border border-border"
                     />
                   )}
                   <div className="flex items-center gap-2">
@@ -72,7 +72,7 @@ export default async function DashboardPage() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between w-full max-w-full">
                     <div>
                       <div className="text-gray-600">Destination: {trip.destination}</div>
                       <div className="text-gray-500 text-sm">

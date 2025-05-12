@@ -134,38 +134,6 @@ export const HoveredLink = ({ children, className, ...rest }: React.PropsWithChi
   );
 };
 
-function ThemeSwitcher() {
-  const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-  const options = [
-    { value: "light", icon: <Sun size={18} />, label: "Light" },
-    { value: "dark", icon: <Moon size={18} />, label: "Dark" },
-    { value: "system", icon: <Laptop size={18} />, label: "System" },
-  ];
-  if (!mounted) return null;
-  return (
-    <div className="flex gap-1 items-center">
-      {options.map((opt) => (
-        <button
-          key={opt.value}
-          aria-label={opt.label}
-          onClick={() => setTheme(opt.value)}
-          className={
-            `p-1 rounded transition-colors border border-transparent hover:border-border
-            ${theme === opt.value ? "bg-accent border-accent text-accent-foreground" : "text-muted-foreground"}`
-          }
-          type="button"
-        >
-          {opt.icon}
-        </button>
-      ))}
-    </div>
-  );
-}
-
 export function Navbar({ className }: { className?: string }) {
   const [active, setActive] = useState<string | null>(null);
   const [trips, setTrips] = useState<{ id: string; name: string; bannerUrl?: string }[]>([]);
@@ -185,10 +153,7 @@ export function Navbar({ className }: { className?: string }) {
       <Menu
         setActive={setActive}
         right={
-          <>
-            <ThemeSwitcher />
-            <ProfileMenu />
-          </>
+          <ProfileMenu />
         }
       >
         <MenuItem setActive={setActive} active={active} item="Trips">

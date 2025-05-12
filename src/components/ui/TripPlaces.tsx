@@ -2,6 +2,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 
 interface Place {
   id: string;
@@ -19,6 +20,7 @@ export function TripPlaces({ tripId }: { tripId: string }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<Place>>({});
   const [editErrors, setEditErrors] = useState<{ name?: string; type?: string }>({});
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {
     fetch(`/api/trips/${tripId}/places`)
@@ -92,24 +94,41 @@ export function TripPlaces({ tripId }: { tripId: string }) {
 
   return (
     <div>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-2 mb-6">
-        <div className="flex gap-2">
-          <div className="flex-1">
-            <input {...register("name", { required: "Name is required" })} placeholder="Name" className="w-full border rounded px-3 py-2" />
-            {errors.name && <div className="text-red-500 text-xs mt-1">{errors.name.message}</div>}
-          </div>
-          <div className="flex-1">
-            <input {...register("type", { required: "Type is required" })} placeholder="Type (e.g. Museum, Restaurant)" className="w-full border rounded px-3 py-2" />
-            {errors.type && <div className="text-red-500 text-xs mt-1">{errors.type.message}</div>}
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <input {...register("address")} placeholder="Address (optional)" className="flex-1 border rounded px-3 py-2" />
-          <input {...register("link")} placeholder="Link (optional)" className="flex-1 border rounded px-3 py-2" />
-        </div>
-        <textarea {...register("notes")} placeholder="Notes (optional)" className="w-full border rounded px-3 py-2" />
-        <Button type="submit" disabled={isPending}>Add Place</Button>
-      </form>
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogTrigger asChild>
+          <Button onClick={() => setDialogOpen(true)} className="mb-4">Add Place</Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add a Place</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-2">
+            <div>
+              <input {...register("name", { required: "Name is required" })} placeholder="Name" className="w-full border rounded px-3 py-2" />
+              {errors.name && <div className="text-red-500 text-xs mt-1">{errors.name.message}</div>}
+            </div>
+            <div>
+              <input {...register("type", { required: "Type is required" })} placeholder="Type (e.g. Museum, Restaurant)" className="w-full border rounded px-3 py-2" />
+              {errors.type && <div className="text-red-500 text-xs mt-1">{errors.type.message}</div>}
+            </div>
+            <div>
+              <input {...register("address") } placeholder="Address (optional)" className="w-full border rounded px-3 py-2" />
+            </div>
+            <div>
+              <input {...register("link") } placeholder="Link (optional)" className="w-full border rounded px-3 py-2" />
+            </div>
+            <div>
+              <textarea {...register("notes") } placeholder="Notes (optional)" className="w-full border rounded px-3 py-2" />
+            </div>
+            <DialogFooter>
+              <Button type="submit" disabled={isPending}>Add Place</Button>
+              <DialogClose asChild>
+                <Button type="button" variant="secondary" onClick={() => setDialogOpen(false)}>Cancel</Button>
+              </DialogClose>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
       <div className="space-y-4">
         {places.length === 0 ? (
           <div className="text-gray-500">No places added yet.</div>

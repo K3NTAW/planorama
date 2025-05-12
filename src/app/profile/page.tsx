@@ -18,6 +18,10 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
+import { useTheme } from "next-themes";
+import { Sun, Moon, Laptop } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { useClerk } from "@clerk/nextjs";
 
 const profileSchema = z.object({
   username: z.string().min(2, { message: 'Username must be at least 2 characters.' }),
@@ -31,6 +35,8 @@ type ProfileFormValues = z.infer<typeof profileSchema>;
 export default function ProfilePage() {
   const { user } = useUser();
   const [avatarUrl, setAvatarUrl] = useState(user?.imageUrl || '');
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
 
   const defaultValues: ProfileFormValues = {
     username: user?.username || user?.firstName || '',
@@ -52,126 +58,220 @@ export default function ProfilePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const themeOptions = [
+    { value: "light", icon: <Sun size={18} />, label: "Light" },
+    { value: "dark", icon: <Moon size={18} />, label: "Dark" },
+    { value: "system", icon: <Laptop size={18} />, label: "System" },
+  ];
+
   function onSubmit() {
     // TODO: handle update
   }
 
   return (
-    <div className="max-w-2xl mx-auto p-8">
-      <Card>
-        <CardHeader>
-          <CardTitle>Profile</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              {/* Avatar and upload */}
-              <div className="flex items-center gap-6">
-                <Avatar className="h-16 w-16">
-                  <AvatarImage src={avatarUrl} alt={form.watch('username')} />
-                  <AvatarFallback>{form.watch('username')?.[0]}</AvatarFallback>
-                </Avatar>
-                <Button type="button" variant="outline" size="sm">Change avatar</Button>
+    <div className="max-w-2xl w-full mx-auto px-2 sm:px-4 md:px-8 py-8 overflow-x-hidden">
+      <Tabs defaultValue="profile" className="w-full">
+        <TabsList className="mb-4 w-full max-w-full overflow-x-auto">
+          <TabsTrigger value="profile">Profile</TabsTrigger>
+          <TabsTrigger value="appearance">Appearance</TabsTrigger>
+        </TabsList>
+        <TabsContent value="profile">
+          <Card className="w-full max-w-full">
+            <CardHeader>
+              <CardTitle>Profile</CardTitle>
+            </CardHeader>
+            <CardContent className="w-full max-w-full">
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 w-full max-w-full">
+                  {/* Avatar and upload */}
+                  <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 w-full max-w-full">
+                    <Avatar className="h-16 w-16">
+                      <AvatarImage src={avatarUrl} alt={form.watch('username')} />
+                      <AvatarFallback>{form.watch('username')?.[0]}</AvatarFallback>
+                    </Avatar>
+                    <Button type="button" variant="outline" size="sm">Change avatar</Button>
+                  </div>
+                  {/* Username */}
+                  <FormField
+                    control={form.control}
+                    name="username"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Username</FormLabel>
+                        <FormControl>
+                          <Input {...field} className="w-full max-w-full" />
+                        </FormControl>
+                        <FormDescription>
+                          This is your public display name. It can be your real name or a pseudonym.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  {/* Email */}
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input {...field} disabled className="w-full max-w-full" />
+                        </FormControl>
+                        <FormDescription>
+                          You can manage verified email addresses in your email settings.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  {/* Bio */}
+                  <FormField
+                    control={form.control}
+                    name="bio"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Bio</FormLabel>
+                        <FormControl>
+                          <textarea
+                            {...field}
+                            rows={3}
+                            className="w-full max-w-full rounded-md border border-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring bg-background text-foreground resize-y"
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          You can @mention other users and organizations to link to them.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  {/* URLs */}
+                  <FormField
+                    control={form.control}
+                    name="urls"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>URLs</FormLabel>
+                        <FormDescription>
+                          Add links to your website, blog, or social media profiles.
+                        </FormDescription>
+                        <div className="space-y-2 w-full max-w-full">
+                          {(field.value || ['']).map((url, i) => (
+                            <Input
+                              key={i}
+                              value={url}
+                              onChange={e => {
+                                const newUrls = [...(field.value || [])];
+                                newUrls[i] = e.target.value;
+                                field.onChange(newUrls);
+                              }}
+                              placeholder="https://yourwebsite.com"
+                              type="url"
+                              className="w-full max-w-full"
+                            />
+                          ))}
+                        </div>
+                        <Button
+                          type="button"
+                          variant="link"
+                          size="sm"
+                          className="px-0"
+                          onClick={() => field.onChange([...(field.value || []), ''])}
+                        >
+                          Add URL
+                        </Button>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  {/* Update button */}
+                  <Button type="submit">Update profile</Button>
+                </form>
+                {/* Danger Zone */}
+                <DangerZone />
+              </Form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="appearance">
+          <Card className="w-full max-w-full">
+            <CardHeader>
+              <CardTitle>Appearance</CardTitle>
+            </CardHeader>
+            <CardContent className="w-full max-w-full">
+              <div className="flex gap-2 items-center flex-wrap">
+                {mounted && themeOptions.map((opt) => (
+                  <button
+                    key={opt.value}
+                    aria-label={opt.label}
+                    onClick={() => setTheme(opt.value)}
+                    className={`p-2 rounded transition-colors border border-transparent hover:border-border ${theme === opt.value ? "bg-accent border-accent text-accent-foreground" : "text-muted-foreground"}`}
+                    type="button"
+                  >
+                    {opt.icon}
+                  </button>
+                ))}
               </div>
-              {/* Username */}
-              <FormField
-                control={form.control}
-                name="username"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Username</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      This is your public display name. It can be your real name or a pseudonym.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              {/* Email */}
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input {...field} disabled />
-                    </FormControl>
-                    <FormDescription>
-                      You can manage verified email addresses in your email settings.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              {/* Bio */}
-              <FormField
-                control={form.control}
-                name="bio"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Bio</FormLabel>
-                    <FormControl>
-                      <textarea
-                        {...field}
-                        rows={3}
-                        className="w-full rounded-md border border-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring bg-background text-foreground"
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      You can @mention other users and organizations to link to them.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              {/* URLs */}
-              <FormField
-                control={form.control}
-                name="urls"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>URLs</FormLabel>
-                    <FormDescription>
-                      Add links to your website, blog, or social media profiles.
-                    </FormDescription>
-                    <div className="space-y-2">
-                      {(field.value || ['']).map((url, i) => (
-                        <Input
-                          key={i}
-                          value={url}
-                          onChange={e => {
-                            const newUrls = [...(field.value || [])];
-                            newUrls[i] = e.target.value;
-                            field.onChange(newUrls);
-                          }}
-                          placeholder="https://yourwebsite.com"
-                          type="url"
-                        />
-                      ))}
-                    </div>
-                    <Button
-                      type="button"
-                      variant="link"
-                      size="sm"
-                      className="px-0"
-                      onClick={() => field.onChange([...(field.value || []), ''])}
-                    >
-                      Add URL
-                    </Button>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              {/* Update button */}
-              <Button type="submit">Update profile</Button>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
+
+function DangerZone() {
+  const { signOut } = useClerk();
+  const { user } = useUser();
+  const [deleting, setDeleting] = useState(false);
+  const [confirm, setConfirm] = useState(false);
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      await user?.delete();
+      await signOut();
+    } catch (e) {
+      setDeleting(false);
+    }
+  };
+
+  return (
+    <div className="mt-10 border border-destructive bg-destructive/10 rounded-lg p-6">
+      <h3 className="text-lg font-semibold text-destructive mb-4">Danger Zone</h3>
+      <div className="space-y-4">
+        <Button variant="outline" className="w-full border-destructive text-destructive hover:bg-destructive/10" onClick={() => signOut()}>
+          Log out
+        </Button>
+        <div>
+          <Button
+            variant="destructive"
+            className="w-full"
+            onClick={() => setConfirm(true)}
+            disabled={deleting}
+          >
+            Delete Account
+          </Button>
+          {confirm && (
+            <div className="mt-4 p-4 border border-destructive rounded bg-destructive/10 text-destructive">
+              <p className="mb-2">Are you sure? This action cannot be undone.</p>
+              <div className="flex gap-2">
+                <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+                  {deleting ? "Deleting..." : "Yes, delete my account"}
+                </Button>
+                <Button variant="outline" onClick={() => setConfirm(false)} disabled={deleting}>
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 } 

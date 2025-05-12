@@ -3,6 +3,7 @@ import { useEffect, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 
 interface Accommodation {
   id: string;
@@ -21,6 +22,7 @@ export function TripAccommodations({ tripId }: { tripId: string }) {
   const [editForm, setEditForm] = useState<Partial<Accommodation>>({});
   const [editErrors, setEditErrors] = useState<{ name?: string; address?: string; checkIn?: string; checkOut?: string }>({});
   const { resolvedTheme } = useTheme();
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {
     fetch(`/api/trips/${tripId}/accommodations`)
@@ -96,18 +98,39 @@ export function TripAccommodations({ tripId }: { tripId: string }) {
 
   return (
     <div>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-2 mb-6">
-        <div className="flex gap-2">
-          <input {...register("name", { required: true })} placeholder="Name" className="flex-1 border rounded px-3 py-2" />
-          <input {...register("address", { required: true })} placeholder="Address" className="flex-1 border rounded px-3 py-2" />
-        </div>
-        <div className="flex gap-2">
-          <input type="datetime-local" {...register("checkIn", { required: true })} className="flex-1 border rounded px-3 py-2" />
-          <input type="datetime-local" {...register("checkOut", { required: true })} className="flex-1 border rounded px-3 py-2" />
-        </div>
-        <input {...register("link")} placeholder="Booking Link (optional)" className="w-full border rounded px-3 py-2" />
-        <Button type="submit" disabled={isPending}>Add Accommodation</Button>
-      </form>
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogTrigger asChild>
+          <Button onClick={() => setDialogOpen(true)} className="mb-4">Add Accommodation</Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Accommodation</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-2">
+            <div>
+              <input {...register("name", { required: true })} placeholder="Name" className="w-full border rounded px-3 py-2" />
+            </div>
+            <div>
+              <input {...register("address", { required: true })} placeholder="Address" className="w-full border rounded px-3 py-2" />
+            </div>
+            <div>
+              <input type="datetime-local" {...register("checkIn", { required: true })} className="w-full border rounded px-3 py-2" />
+            </div>
+            <div>
+              <input type="datetime-local" {...register("checkOut", { required: true })} className="w-full border rounded px-3 py-2" />
+            </div>
+            <div>
+              <input {...register("link")} placeholder="Booking Link (optional)" className="w-full border rounded px-3 py-2" />
+            </div>
+            <DialogFooter>
+              <Button type="submit" disabled={isPending}>Add Accommodation</Button>
+              <DialogClose asChild>
+                <Button type="button" variant="secondary" onClick={() => setDialogOpen(false)}>Cancel</Button>
+              </DialogClose>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
       <div className="space-y-4">
         {accommodations.length === 0 ? (
           <div className="text-gray-500">No accommodations added yet.</div>

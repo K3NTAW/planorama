@@ -8,6 +8,7 @@ import Image from 'next/image';
 import { TripDeleteButtonWithConfirm } from '@/components/ui/TripDeleteButtonWithConfirm';
 import { ShareTripButton } from '@/components/ui/ShareTripButton';
 import { AcceptInviteDialog } from '@/components/ui/AcceptInviteDialog';
+import { TripSettingsTab } from '@/components/trip/TripSettingsTab';
 
 const prisma = new PrismaClient();
 
@@ -21,7 +22,7 @@ export default async function TripDetailsPage(props: any) {
   if (!trip) return notFound();
 
   return (
-    <div className="max-w-3xl mx-auto p-6">
+    <div className="max-w-3xl w-full mx-auto px-2 sm:px-4 md:px-6 py-6 overflow-x-hidden">
       {/* Accept invite dialog on page load */}
       <AcceptInviteDialog tripId={tripId} />
       {trip.bannerUrl && (
@@ -30,10 +31,10 @@ export default async function TripDetailsPage(props: any) {
           alt={trip.name}
           width={800}
           height={224}
-          className="w-full h-56 object-cover rounded-md mb-6 border border-border"
+          className="w-full max-w-full h-56 object-cover rounded-md mb-6 border border-border"
         />
       )}
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-col sm:flex-row items-center justify-between w-full max-w-full gap-4">
         <div>
           <h1 className="text-3xl font-bold mb-2">{trip.name}</h1>
           <div className="text-lg text-gray-600 mb-1">Destination: {trip.destination}</div>
@@ -42,31 +43,25 @@ export default async function TripDetailsPage(props: any) {
             {trip.endDate ? ` - ${format(new Date(trip.endDate), 'yyyy-MM-dd')}` : ''}
           </div>
         </div>
-        <TripDeleteButtonWithConfirm tripId={tripId} />
       </div>
-      {/* Share section */}
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold mb-2">Share this trip</h2>
-        <ShareTripButton tripId={tripId} />
-      </div>
-      <Tabs defaultValue="itinerary" className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="itinerary">Itinerary</TabsTrigger>
+      <Tabs defaultValue="places" className="w-full max-w-full">
+        <TabsList className="mb-4 w-full max-w-full overflow-x-auto">
           <TabsTrigger value="places">Places</TabsTrigger>
           <TabsTrigger value="accommodation">Accommodation</TabsTrigger>
           <TabsTrigger value="files">Files</TabsTrigger>
+          <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
-        <TabsContent value="itinerary">
-          <div className="p-4 border rounded bg-white">Daily itinerary will go here.</div>
-        </TabsContent>
         <TabsContent value="places">
-          <TripPlaces tripId={tripId} />
+          <div className="w-full max-w-full"><TripPlaces tripId={tripId} /></div>
         </TabsContent>
         <TabsContent value="accommodation">
-          <TripAccommodations tripId={tripId} />
+          <div className="w-full max-w-full"><TripAccommodations tripId={tripId} /></div>
         </TabsContent>
         <TabsContent value="files">
-          <div className="p-4 border rounded bg-white">Files and links will go here.</div>
+          <div className="p-4 border rounded bg-white w-full max-w-full">Files and links will go here.</div>
+        </TabsContent>
+        <TabsContent value="settings">
+          <TripSettingsTab tripId={tripId} />
         </TabsContent>
       </Tabs>
     </div>
