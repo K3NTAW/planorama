@@ -3,7 +3,7 @@ export interface CloudinaryResponse {
   [key: string]: any;
 }
 
-export async function uploadToCloudinary(file: File): Promise<CloudinaryResponse | null> {
+export async function uploadToCloudinary(file: File, folder: string = "trip-files"): Promise<CloudinaryResponse | null> {
   try {
     // First, get the signature from our backend
     const signatureResponse = await fetch("/api/cloudinary-signature", {
@@ -12,7 +12,7 @@ export async function uploadToCloudinary(file: File): Promise<CloudinaryResponse
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        folder: "trip-banners",
+        folder,
       }),
     });
 
@@ -25,7 +25,7 @@ export async function uploadToCloudinary(file: File): Promise<CloudinaryResponse
       apiKey,
       timestamp,
       signature,
-      folder,
+      folder: returnedFolder,
     } = await signatureResponse.json();
 
     // Create form data for the Cloudinary upload
@@ -34,11 +34,11 @@ export async function uploadToCloudinary(file: File): Promise<CloudinaryResponse
     formData.append("api_key", apiKey);
     formData.append("timestamp", timestamp);
     formData.append("signature", signature);
-    formData.append("folder", folder);
+    formData.append("folder", returnedFolder);
 
-    // Upload to Cloudinary
+    // Upload to Cloudinary (use /auto/upload for all file types)
     const uploadResponse = await fetch(
-      `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+      `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`,
       {
         method: "POST",
         body: formData,

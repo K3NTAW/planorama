@@ -45,7 +45,9 @@ export default async function DashboardPage() {
   return (
     <div className="max-w-3xl w-full mx-auto px-2 sm:px-4 md:px-6 py-6 overflow-x-hidden">
       <h1 className="text-3xl font-bold mb-6">Your Trips</h1>
-      <CreateTripButton onTripCreated={handleTripCreated} />
+      <div className="mb-6">
+        <CreateTripButton onTripCreated={handleTripCreated} />
+      </div>
       <div className="grid gap-4 w-full max-w-full">
         {trips.length === 0 ? (
           <div className="text-gray-500">No trips found. Start by creating a new trip!</div>

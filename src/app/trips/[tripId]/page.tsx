@@ -9,6 +9,7 @@ import { TripDeleteButtonWithConfirm } from '@/components/ui/TripDeleteButtonWit
 import { ShareTripButton } from '@/components/ui/ShareTripButton';
 import { AcceptInviteDialog } from '@/components/ui/AcceptInviteDialog';
 import { TripSettingsTab } from '@/components/trip/TripSettingsTab';
+import { TripFilesTab } from '@/components/trip/TripFilesTab';
 
 const prisma = new PrismaClient();
 
@@ -58,7 +59,7 @@ export default async function TripDetailsPage(props: any) {
           <div className="w-full max-w-full"><TripAccommodations tripId={tripId} /></div>
         </TabsContent>
         <TabsContent value="files">
-          <div className="p-4 border rounded bg-white dark:bg-card w-full max-w-full">Files and links will go here.</div>
+          <TripFilesTab tripId={tripId} />
         </TabsContent>
         <TabsContent value="settings">
           <TripSettingsTab tripId={tripId} />

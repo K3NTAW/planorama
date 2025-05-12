@@ -62,7 +62,7 @@ export default function DailyPage() {
         String(todayObj.getDate()).padStart(2, "0");
       // Debug log
       console.log("All accommodations:", allAccommodations, "Today:", today);
-      setPlaces(allPlaces.filter(p => p.date === today));
+      setPlaces(allPlaces.filter(p => p.date && p.date.slice(0, 10) === today));
       setAccommodations(
         allAccommodations.filter(acc => {
           // Show if today is between checkIn and checkOut (inclusive)
