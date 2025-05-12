@@ -1,34 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server';
-import crypto from 'crypto';
+import { v2 as cloudinary } from "cloudinary";
 
-export async function POST(req: NextRequest) {
-  const { folder = '', public_id = '' } = await req.json();
-  const timestamp = Math.floor(Date.now() / 1000);
-  const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
-  const apiKey = process.env.CLOUDINARY_API_KEY;
-  const apiSecret = process.env.CLOUDINARY_API_SECRET;
-  if (!cloudName || !apiKey || !apiSecret) {
-    return NextResponse.json({ error: 'Cloudinary env vars missing' }, { status: 500 });
+cloudinary.config({
+  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+export async function POST(request: Request) {
+  try {
+    const { folder } = await request.json();
+
+    const timestamp = Math.round(new Date().getTime() / 1000);
+    const signature = cloudinary.utils.api_sign_request(
+      {
+        timestamp,
+        folder,
+      },
+      process.env.CLOUDINARY_API_SECRET!
+    );
+
+    return NextResponse.json({
+      cloudName: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+      apiKey: process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY,
+      timestamp,
+      signature,
+      folder,
+    });
+  } catch (error) {
+    console.error("Error generating Cloudinary signature:", error);
+    return NextResponse.json(
+      { error: "Failed to generate signature" },
+      { status: 500 }
+    );
   }
-  const paramsToSign: Record<string, string | number> = {
-    timestamp,
-    folder,
-  };
-  if (public_id) paramsToSign.public_id = public_id;
-  const signature = crypto
-    .createHash('sha1')
-    .update(
-      Object.keys(paramsToSign)
-        .sort()
-        .map((key) => `${key}=${paramsToSign[key]}`)
-        .join('&') + apiSecret
-    )
-    .digest('hex');
-  return NextResponse.json({
-    cloudName,
-    apiKey,
-    timestamp,
-    folder,
-    signature,
-  });
 } 
