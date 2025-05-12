@@ -11,6 +11,7 @@ interface Place {
   address?: string;
   link?: string;
   notes?: string;
+  date?: string;
 }
 
 export function TripPlaces({ tripId }: { tripId: string }) {
@@ -118,6 +119,9 @@ export function TripPlaces({ tripId }: { tripId: string }) {
               <input {...register("link") } placeholder="Link (optional)" className="w-full border rounded px-3 py-2" />
             </div>
             <div>
+              <input type="date" {...register("date") } placeholder="Date (optional)" className="w-full border rounded px-3 py-2" />
+            </div>
+            <div>
               <textarea {...register("notes") } placeholder="Notes (optional)" className="w-full border rounded px-3 py-2" />
             </div>
             <DialogFooter>
@@ -151,6 +155,7 @@ export function TripPlaces({ tripId }: { tripId: string }) {
                     <input name="address" value={editForm.address || ""} onChange={handleEditChange} placeholder="Address (optional)" className="flex-1 border rounded px-3 py-2" />
                     <input name="link" value={editForm.link || ""} onChange={handleEditChange} placeholder="Link (optional)" className="flex-1 border rounded px-3 py-2" />
                   </div>
+                  <input type="date" name="date" value={editForm.date || ""} onChange={handleEditChange} placeholder="Date (optional)" className="flex-1 border rounded px-3 py-2" />
                   <textarea name="notes" value={editForm.notes || ""} onChange={handleEditChange} placeholder="Notes (optional)" className="w-full border rounded px-3 py-2" />
                   <div className="flex gap-2 mt-2">
                     <Button size="sm" onClick={handleEditSave} type="button">Save</Button>
@@ -163,6 +168,7 @@ export function TripPlaces({ tripId }: { tripId: string }) {
                   {place.address && <div className="text-gray-600">{place.address}</div>}
                   {place.link && <a href={place.link} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">Link</a>}
                   {place.notes && <div className="text-gray-500 text-sm mt-1">{place.notes}</div>}
+                  {place.date && <div className="text-gray-500 text-sm">Date: {place.date}</div>}
                 </div>
               )}
               {editingId === place.id ? null : (

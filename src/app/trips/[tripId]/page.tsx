@@ -46,13 +46,14 @@ export default async function TripDetailsPage(props: any) {
       </div>
       <Tabs defaultValue="places" className="w-full max-w-full">
         <TabsList className="mb-4 w-full max-w-full overflow-x-auto">
+          <TabsTrigger value="daily">Daily</TabsTrigger>
           <TabsTrigger value="places">Places</TabsTrigger>
           <TabsTrigger value="accommodation">Accommodation</TabsTrigger>
           <TabsTrigger value="files">Files</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
-        <TabsContent value="places">
-          <div className="w-full max-w-full"><TripPlaces tripId={tripId} /></div>
+        <TabsContent value="daily">
+          <div className="w-full max-w-full"><TripPlaces tripId={tripId} onlyToday /></div>
         </TabsContent>
         <TabsContent value="accommodation">
           <div className="w-full max-w-full"><TripAccommodations tripId={tripId} /></div>
