@@ -11,6 +11,7 @@ export async function GET(req: NextRequest, { params }: { params: { tripId: stri
   const accommodations = await prisma.accommodation.findMany({
     where: { tripId },
     orderBy: { checkIn: 'asc' },
+    include: { user: true },
   });
   return NextResponse.json(accommodations);
 }
@@ -31,7 +32,9 @@ export async function POST(req: NextRequest, { params }: { params: { tripId: str
       checkIn: new Date(checkIn),
       checkOut: new Date(checkOut),
       link,
+      userId: userId,
     },
+    include: { user: true },
   });
   return NextResponse.json(accommodation, { status: 201 });
 }

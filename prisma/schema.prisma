@@ -19,6 +19,8 @@ model User {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   sharedTrips TripShare[]
+  accommodations Accommodation[]
+  places Place[]
 }
 
 model Trip {
@@ -77,6 +79,8 @@ model Accommodation {
   link      String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  user      User?    @relation(fields: [userId], references: [id])
+  userId    String?
 }
 
 model Media {
@@ -125,8 +129,11 @@ model Place {
   address   String?
   link      String?
   notes     String?
+  date      DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  user      User?    @relation(fields: [userId], references: [id])
+  userId    String?
 }
 
 model TripShare {
