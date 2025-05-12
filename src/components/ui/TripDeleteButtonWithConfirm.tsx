@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export function TripDeleteButtonWithConfirm({ tripId }: { tripId: string }) {
   const [open, setOpen] = useState(false);
@@ -27,16 +28,19 @@ export function TripDeleteButtonWithConfirm({ tripId }: { tripId: string }) {
       </button>
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded shadow-lg p-6 max-w-sm w-full">
+          <div className="bg-white dark:bg-card dark:text-white rounded shadow-lg p-6 max-w-sm w-full">
             <h2 className="text-lg font-bold mb-2">Delete Trip</h2>
             <p className="mb-4">Are you sure you want to delete this trip? This action cannot be undone.</p>
             <div className="flex justify-end gap-2">
               <button
+                type="button"
                 onClick={() => setOpen(false)}
-                className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300"
                 disabled={isLoading}
+                className=""
               >
-                Cancel
+                <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={isLoading}>
+                  Cancel
+                </Button>
               </button>
               <button
                 onClick={handleDelete}

@@ -99,8 +99,8 @@ export function TripPlaces({ tripId }: { tripId: string }) {
         <DialogTrigger asChild>
           <Button onClick={() => setDialogOpen(true)} className="mb-4">Add Place</Button>
         </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
+        <DialogContent className="bg-white dark:bg-card dark:text-white border border-gray-200 dark:border-gray-700">
+          <DialogHeader className="dark:text-white">
             <DialogTitle>Add a Place</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-2">

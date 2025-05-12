@@ -258,7 +258,7 @@ function DangerZone() {
             Delete Account
           </Button>
           {confirm && (
-            <div className="mt-4 p-4 border border-destructive rounded bg-destructive/10 text-destructive">
+            <div className="mt-4 p-4 border border-destructive rounded bg-destructive/10 text-destructive dark:bg-card dark:text-white dark:border-gray-700">
               <p className="mb-2">Are you sure? This action cannot be undone.</p>
               <div className="flex gap-2">
                 <Button variant="destructive" onClick={handleDelete} disabled={deleting}>

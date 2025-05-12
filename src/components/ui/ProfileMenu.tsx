@@ -21,9 +21,6 @@ export function ProfileMenu() {
           <Link href="/profile">Profile</Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href="/settings">Settings</Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
           <SignOutButton>Logout</SignOutButton>
         </DropdownMenuItem>
       </DropdownMenuContent>

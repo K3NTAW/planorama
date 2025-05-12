@@ -105,8 +105,8 @@ export function CreateTripButton({ onTripCreated }: CreateTripButtonProps) {
       <DialogTrigger asChild>
         <Button>Create New Trip</Button>
       </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
+      <DialogContent className="bg-white dark:bg-card dark:text-white border border-gray-200 dark:border-gray-700">
+        <DialogHeader className="dark:text-white">
           <DialogTitle>Create a New Trip</DialogTitle>
           <DialogDescription>
             Add the details for your new trip. You can add more information later.
