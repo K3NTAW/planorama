@@ -16,13 +16,22 @@ export function ShareTripButton({ tripId }: { tripId: string }) {
   const createInvite = async () => {
     setLoading(true);
     setInviteLink("");
-    const res = await fetch(`/api/trips/${tripId}/invite`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ permissionLevel: permission }),
-    });
-    const data = await res.json();
-    setInviteLink(data.invite_link);
+    try {
+      const res = await fetch(`/api/trips/${tripId}/invite`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ permissionLevel: permission }),
+      });
+      const data = await res.json();
+      if (res.status === 409 && data.error === 'already_collaborator') {
+        toast({ title: 'User is already a collaborator', variant: 'destructive' });
+        setLoading(false);
+        return;
+      }
+      setInviteLink(data.invite_link);
+    } catch (err) {
+      toast({ title: 'Failed to generate invite', variant: 'destructive' });
+    }
     setLoading(false);
   };
 

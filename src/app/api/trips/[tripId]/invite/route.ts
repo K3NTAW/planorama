@@ -9,11 +9,22 @@ export async function POST(req: NextRequest, { params }: { params: { tripId: str
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { tripId } = params;
-  const { permissionLevel } = await req.json();
+  const { permissionLevel, email } = await req.json();
 
   // Check ownership
   const trip = await prisma.trip.findUnique({ where: { id: tripId } });
   if (!trip || trip.userId !== userId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+
+  // If email is provided, check if user is already a collaborator
+  if (email) {
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (user) {
+      const existingShare = await prisma.tripShare.findUnique({ where: { tripId_userId: { tripId, userId: user.id } } });
+      if (existingShare) {
+        return NextResponse.json({ error: 'already_collaborator' }, { status: 409 });
+      }
+    }
+  }
 
   const inviteToken = randomUUID();
   await prisma.tripInvite.create({
