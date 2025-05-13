@@ -1,8 +1,13 @@
 "use client";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState, useTransition, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { UploadCloud, Loader, CheckCircle, File as FileIcon, ExternalLink } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { cn } from "@/lib/utils";
+import { uploadToCloudinary } from "@/lib/cloudinary";
+import { Dialog as Modal, DialogContent as ModalContent, DialogHeader as ModalHeader, DialogTitle as ModalTitle } from "@/components/ui/dialog";
 
 interface Place {
   id: string;
@@ -22,12 +27,63 @@ export function TripPlaces({ tripId }: { tripId: string }) {
   const [editForm, setEditForm] = useState<Partial<Place>>({});
   const [editErrors, setEditErrors] = useState<{ name?: string; type?: string }>({});
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [fileUploading, setFileUploading] = useState(false);
+  const [fileProgress, setFileProgress] = useState(0);
+  const [uploadedFile, setUploadedFile] = useState<{ url: string; name: string } | null>(null);
+  const [isFileDragging, setIsFileDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [fileModalUrl, setFileModalUrl] = useState<string | null>(null);
 
   useEffect(() => {
     fetch(`/api/trips/${tripId}/places`)
       .then(res => res.json())
       .then(data => setPlaces(data || []));
   }, [tripId]);
+
+  async function handleFileUpload(file: File) {
+    if (!file) return;
+    setFileUploading(true);
+    setFileProgress(0);
+    // Simulate progress
+    const progressInterval = setInterval(() => {
+      setFileProgress((prev) => Math.min(prev + Math.random() * 20, 95));
+    }, 300);
+    try {
+      const result = await uploadToCloudinary(file, `place-files/${tripId}`);
+      clearInterval(progressInterval);
+      if (result?.secure_url) {
+        setUploadedFile({ url: result.secure_url, name: file.name });
+        setFileProgress(100);
+      } else {
+        setUploadedFile(null);
+        setFileProgress(0);
+      }
+    } catch (e) {
+      clearInterval(progressInterval);
+      setUploadedFile(null);
+      setFileProgress(0);
+    } finally {
+      setFileUploading(false);
+    }
+  }
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) handleFileUpload(file);
+  }
+  function handleFileDragOver(e: React.DragEvent) {
+    e.preventDefault();
+    setIsFileDragging(true);
+  }
+  function handleFileDragLeave() {
+    setIsFileDragging(false);
+  }
+  function handleFileDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setIsFileDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleFileUpload(file);
+  }
 
   const onSubmit = (data: Omit<Place, 'id'>) => {
     startTransition(async () => {
@@ -39,6 +95,20 @@ export function TripPlaces({ tripId }: { tripId: string }) {
       if (res.ok) {
         const newPlace = await res.json();
         setPlaces(prev => [...prev, newPlace]);
+        // If a file was uploaded, associate it with the new place
+        if (uploadedFile) {
+          await fetch(`/api/trips/${tripId}/places/files`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              placeId: newPlace.id,
+              url: uploadedFile.url,
+              name: uploadedFile.name,
+            }),
+          });
+        }
+        setUploadedFile(null);
+        setFileProgress(0);
         reset();
       }
     });
@@ -132,6 +202,51 @@ export function TripPlaces({ tripId }: { tripId: string }) {
             <div>
               <textarea {...register("notes") } placeholder="Notes (optional)" className="w-full border rounded px-3 py-2" />
             </div>
+            <div>
+              <label className="block font-medium mb-1">Attach a file (optional)</label>
+              <div
+                className={cn(
+                  "border-2 border-dashed rounded-lg p-4 transition-all duration-200 mb-2",
+                  isFileDragging
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:border-primary/50"
+                )}
+                onDragOver={handleFileDragOver}
+                onDragLeave={handleFileDragLeave}
+                onDrop={handleFileDrop}
+                onClick={() => fileInputRef.current?.click()}
+                style={{ cursor: fileUploading ? "not-allowed" : "pointer" }}
+              >
+                <div className="flex flex-col items-center justify-center gap-2">
+                  <UploadCloud className="h-8 w-8 text-primary mb-2" />
+                  <span className="text-sm text-muted-foreground">
+                    {isFileDragging
+                      ? "Drop file here"
+                      : "Drag & drop or click to select a file (e.g. ticket, PDF)"}
+                  </span>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    className="hidden"
+                    disabled={fileUploading}
+                  />
+                </div>
+              </div>
+              {uploadedFile && (
+                <div className="mt-2 relative border rounded p-2 flex items-center gap-2 bg-secondary/40">
+                  <FileIcon className="h-6 w-6 text-muted-foreground" />
+                  <span className="truncate flex-1">{uploadedFile.name}</span>
+                  {fileUploading && (
+                    <Loader className="h-5 w-5 text-primary animate-spin" />
+                  )}
+                  {!fileUploading && fileProgress === 100 && (
+                    <CheckCircle className="h-5 w-5 text-green-500" />
+                  )}
+                  <Progress value={fileProgress} className="w-1/3 ml-2" />
+                </div>
+              )}
+            </div>
             <DialogFooter>
               <Button type="submit" disabled={isPending}>Add Place</Button>
               <DialogClose asChild>
@@ -190,12 +305,47 @@ export function TripPlaces({ tripId }: { tripId: string }) {
                 <div className="flex flex-col gap-2">
                   <Button size="sm" variant="outline" onClick={() => handleEdit(place)}>Edit</Button>
                   <Button variant="destructive" size="sm" onClick={() => handleDelete(place.id)}>Delete</Button>
+                  <PlaceFileButton placeId={place.id} onOpen={setFileModalUrl} tripId={tripId} />
                 </div>
               )}
             </div>
           ))
         )}
       </div>
+      {/* File modal */}
+      <Modal open={!!fileModalUrl} onOpenChange={open => !open && setFileModalUrl(null)}>
+        <ModalContent>
+          <ModalHeader>
+            <ModalTitle>View or Download File</ModalTitle>
+          </ModalHeader>
+          {fileModalUrl && (
+            <div className="flex flex-col items-center gap-4">
+              <iframe src={fileModalUrl} className="w-full h-96 border rounded" title="Place File Preview" />
+              <a href={fileModalUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline flex items-center gap-1">
+                <ExternalLink className="h-4 w-4" /> Download / Open in new tab
+              </a>
+            </div>
+          )}
+        </ModalContent>
+      </Modal>
     </div>
+  );
+}
+
+// Helper component to fetch and show file button for a place
+function PlaceFileButton({ placeId, onOpen, tripId }: { placeId: string; onOpen: (url: string) => void; tripId: string }) {
+  const [file, setFile] = useState<{ url: string; name: string } | null>(null);
+  useEffect(() => {
+    fetch(`/api/trips/${tripId}/places/files?placeId=${placeId}`)
+      .then(res => res.json())
+      .then(files => {
+        if (Array.isArray(files) && files.length > 0) setFile(files[0]);
+      });
+  }, [placeId, tripId]);
+  if (!file) return null;
+  return (
+    <Button size="sm" variant="outline" onClick={() => onOpen(file.url)}>
+      <FileIcon className="h-4 w-4 mr-1" /> {file.name}
+    </Button>
   );
 } 

@@ -35,6 +35,7 @@ export function CreateTripButton({ onTripCreated }: CreateTripButtonProps) {
   const [bannerUrl, setBannerUrl] = useState<string>("");
   const [isBannerDragging, setIsBannerDragging] = useState(false);
   const bannerInputRef = useRef<HTMLInputElement>(null);
+  const [open, setOpen] = useState(false);
 
   async function handleBannerUpload(file: File) {
     if (!file) return;
@@ -90,9 +91,11 @@ export function CreateTripButton({ onTripCreated }: CreateTripButtonProps) {
 
     try {
       const formData = new FormData(e.currentTarget);
-      const title = formData.get("title") as string;
+      const name = formData.get("name") as string;
+      const destination = formData.get("destination") as string;
+      const startDate = formData.get("startDate") as string;
+      const endDate = formData.get("endDate") as string;
       const description = formData.get("description") as string;
-
       let bannerUrlToSend = bannerUrl;
 
       const response = await fetch("/api/trips", {
@@ -101,7 +104,10 @@ export function CreateTripButton({ onTripCreated }: CreateTripButtonProps) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          title,
+          name,
+          destination,
+          startDate,
+          endDate,
           description,
           bannerUrl: bannerUrlToSend,
         }),
@@ -116,17 +122,18 @@ export function CreateTripButton({ onTripCreated }: CreateTripButtonProps) {
         description: "Your trip has been created.",
       });
 
+      // Call the callback if provided (for real-time update)
+      if (onTripCreated) onTripCreated();
+
       // Reset form and state
       e.currentTarget.reset();
       setBannerFile(null);
       setBannerPreview(null);
+      setOpen(false);
 
-      // Call the callback if provided
-      if (onTripCreated) onTripCreated();
-
-      // Navigate to dashboard
-      router.push("/dashboard");
-      router.refresh();
+      // Navigate to dashboard (optional, comment out for real-time update)
+      // router.push("/dashboard");
+      // router.refresh();
     } catch (error) {
       toast({
         title: "Error",
@@ -139,9 +146,22 @@ export function CreateTripButton({ onTripCreated }: CreateTripButtonProps) {
   };
 
   return (
-    <Dialog>
+    <Dialog
+      open={open}
+      onOpenChange={(isOpen) => {
+        setOpen(isOpen);
+        if (!isOpen) {
+          setBannerFile(null);
+          setBannerPreview(null);
+          setBannerUploading(false);
+          setBannerProgress(0);
+          setBannerUrl("");
+          setIsBannerDragging(false);
+        }
+      }}
+    >
       <DialogTrigger asChild>
-        <Button>Create New Trip</Button>
+        <Button onClick={() => setOpen(true)}>Create New Trip</Button>
       </DialogTrigger>
       <DialogContent className="bg-white dark:bg-card dark:text-white border border-gray-200 dark:border-gray-700">
         <DialogHeader className="dark:text-white">
@@ -153,11 +173,44 @@ export function CreateTripButton({ onTripCreated }: CreateTripButtonProps) {
         <form onSubmit={onSubmit} className="space-y-6">
           <div className="space-y-2">
             <div className="grid w-full items-center gap-1.5">
-              <Label>Title</Label>
+              <Label>Name</Label>
               <Input
-                id="title"
-                name="title"
-                placeholder="Enter trip title"
+                id="name"
+                name="name"
+                placeholder="Enter trip name"
+                required
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <div className="grid w-full items-center gap-1.5">
+              <Label>Destination</Label>
+              <Input
+                id="destination"
+                name="destination"
+                placeholder="Enter destination"
+                required
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <div className="grid w-full items-center gap-1.5">
+              <Label>Start Date</Label>
+              <Input
+                id="startDate"
+                name="startDate"
+                type="date"
+                required
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <div className="grid w-full items-center gap-1.5">
+              <Label>End Date</Label>
+              <Input
+                id="endDate"
+                name="endDate"
+                type="date"
                 required
               />
             </div>

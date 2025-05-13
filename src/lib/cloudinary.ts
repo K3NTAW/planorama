@@ -35,6 +35,7 @@ export async function uploadToCloudinary(file: File, folder: string = "trip-file
     formData.append("timestamp", timestamp);
     formData.append("signature", signature);
     formData.append("folder", returnedFolder);
+    formData.append("resource_type", "auto");
 
     // Upload to Cloudinary (use /auto/upload for all file types)
     const uploadResponse = await fetch(
@@ -46,6 +47,8 @@ export async function uploadToCloudinary(file: File, folder: string = "trip-file
     );
 
     if (!uploadResponse.ok) {
+      const errorText = await uploadResponse.text();
+      console.error("Cloudinary upload error:", errorText);
       throw new Error("Failed to upload to Cloudinary");
     }
 

@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef, DragEvent, ChangeEvent } from "react";
+import { useState, useRef, DragEvent, ChangeEvent, useEffect } from "react";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import { 
   UploadCloud, 
@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { Dialog as Modal, DialogContent as ModalContent, DialogHeader as ModalHeader, DialogTitle as ModalTitle } from "@/components/ui/dialog";
 
 interface TripFilesTabProps {
   tripId: string;
@@ -27,11 +28,37 @@ interface UploadedFile {
   type?: string;
 }
 
+interface TripFile {
+  id: string;
+  url: string;
+  name: string;
+  createdAt: string;
+}
+
 export function TripFilesTab({ tripId }: TripFilesTabProps) {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [uploading, setUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [allFiles, setAllFiles] = useState<TripFile[]>([]);
+  const [fileModal, setFileModal] = useState<{ url: string; name: string } | null>(null);
+
+  // Fetch all trip files on mount
+  useEffect(() => {
+    async function fetchFiles() {
+      const filesRes = await fetch(`/api/trips/${tripId}/files`);
+      const files = await filesRes.json();
+      setAllFiles(files);
+    }
+    fetchFiles();
+  }, [tripId]);
+
+  // After upload, refetch all files
+  async function refetchAllFiles() {
+    const filesRes = await fetch(`/api/trips/${tripId}/files`);
+    const files = await filesRes.json();
+    setAllFiles(files);
+  }
 
   async function handleFileUpload(file: File) {
     if (!file) return;
@@ -66,9 +93,16 @@ export function TripFilesTab({ tripId }: TripFilesTabProps) {
               : f
           )
         );
+        // Save file to trip
+        await fetch(`/api/trips/${tripId}/files`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: result.secure_url, name: file.name }),
+        });
       } else {
         setUploadedFiles(prev => prev.filter(f => f.id !== tempId));
       }
+      await refetchAllFiles();
     } catch (error) {
       console.error("Upload failed:", error);
       clearInterval(progressInterval);
@@ -119,6 +153,15 @@ export function TripFilesTab({ tripId }: TripFilesTabProps) {
     } catch {
       return url.split('/').pop() || "file";
     }
+  }
+
+  async function handleDeleteFile(fileId: string) {
+    await fetch(`/api/trips/${tripId}/files`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: fileId }),
+    });
+    await refetchAllFiles();
   }
 
   return (
@@ -177,16 +220,16 @@ export function TripFilesTab({ tripId }: TripFilesTabProps) {
           />
         </div>
       </div>
-      {/* File list */}
+      {/* All files list */}
       <div>
         <h3 className="font-semibold mb-4 text-foreground">
-          {uploadedFiles.length > 0 
-            ? `Uploaded Files (${uploadedFiles.length})` 
+          {allFiles.length > 0 
+            ? `All Uploaded Files (${allFiles.length})` 
             : "No files uploaded yet"
           }
         </h3>
         <div className="space-y-3">
-          {uploadedFiles.map((file) => (
+          {allFiles.map((file) => (
             <div 
               key={file.id} 
               className="flex items-start gap-3 p-3 rounded-md bg-secondary/40 border border-border relative"
@@ -196,62 +239,44 @@ export function TripFilesTab({ tripId }: TripFilesTabProps) {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex justify-between">
-                  <h4 className="font-medium text-sm truncate text-foreground" title={file.name || getFileNameFromUrl(file.url)}>
-                    {file.name || getFileNameFromUrl(file.url)}
+                  <h4 className="font-medium text-sm truncate text-foreground cursor-pointer" title={file.name} onClick={() => setFileModal({ url: file.url, name: file.name })}>
+                    {file.name}
                   </h4>
                   <div className="flex items-center gap-1">
-                    {file.progress === 100 ? (
-                      <>
-                        <a 
-                          href={file.url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="p-1 text-primary hover:text-primary/80"
-                          title="Open file"
-                        >
-                          <ExternalLink className="h-4 w-4" />
-                        </a>
-                        <button 
-                          onClick={() => removeFile(file.id)}
-                          className="p-1 text-destructive hover:text-destructive/80"
-                          title="Remove file"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </>
-                    ) : (
-                      <div className="flex items-center">
-                        <span className="text-xs mr-2">{Math.round(file.progress)}%</span>
-                        <Loader className="h-4 w-4 animate-spin text-primary" />
-                      </div>
-                    )}
+                    <Button size="sm" variant="secondary" asChild>
+                      <a href={file.url} target="_blank" rel="noopener noreferrer" download>
+                        Download
+                      </a>
+                    </Button>
+                    <Button size="sm" variant="destructive" onClick={() => handleDeleteFile(file.id)}>
+                      <Trash2 className="h-4 w-4 mr-1" /> Delete
+                    </Button>
                   </div>
                 </div>
-                {file.size && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {formatFileSize(file.size)}
-                  </p>
-                )}
-                {/* Progress bar */}
-                <div className="mt-2">
-                  <Progress 
-                    value={file.progress} 
-                    className={cn(
-                      "h-1.5",
-                      file.progress === 100 ? "bg-success" : ""
-                    )}
-                  />
-                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Uploaded: {new Date(file.createdAt).toLocaleString()}
+                </p>
               </div>
-              {file.progress === 100 && (
-                <div className="absolute -right-1 -top-1 bg-background rounded-full">
-                  <CheckCircle className="h-4 w-4 text-success" />
-                </div>
-              )}
             </div>
           ))}
         </div>
       </div>
+      {/* File modal */}
+      <Modal open={!!fileModal} onOpenChange={open => !open && setFileModal(null)}>
+        <ModalContent>
+          <ModalHeader>
+            <ModalTitle>{fileModal?.name}</ModalTitle>
+          </ModalHeader>
+          {fileModal && (
+            <div className="flex flex-col items-center gap-4">
+              <iframe src={fileModal.url} className="w-full h-96 border rounded" title="File Preview" />
+              <a href={fileModal.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline flex items-center gap-1">
+                <ExternalLink className="h-4 w-4" /> Download / Open in new tab
+              </a>
+            </div>
+          )}
+        </ModalContent>
+      </Modal>
     </Card>
   );
 } 
