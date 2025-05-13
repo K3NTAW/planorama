@@ -2,7 +2,6 @@
 
 import { ThemeProvider } from "next-themes";
 import { Navbar } from "@/components/ui/navbar-menu";
-import { SwipeableMain } from "@/components/SwipeableMain";
 import { usePathname } from 'next/navigation';
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -12,9 +11,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       {!hideNavbar && <Navbar />}
-      <SwipeableMain>
-        {children}
-      </SwipeableMain>
+      {children}
     </ThemeProvider>
   );
 } 

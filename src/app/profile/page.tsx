@@ -22,6 +22,7 @@ import { useTheme } from "next-themes";
 import { Sun, Moon, Laptop } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useClerk } from "@clerk/nextjs";
+import { create } from 'zustand';
 
 const profileSchema = z.object({
   username: z.string().min(2, { message: 'Username must be at least 2 characters.' }),
@@ -31,6 +32,16 @@ const profileSchema = z.object({
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
 
+interface ProfileState {
+  loading: boolean;
+  setLoading: (loading: boolean) => void;
+}
+
+export const useProfileStore = create<ProfileState>((set) => ({
+  loading: true,
+  setLoading: (loading) => set({ loading }),
+}));
+
 export default function ProfilePage() {
   const { user, isLoaded } = useUser();
   const { theme, setTheme } = useTheme();
@@ -39,6 +50,7 @@ export default function ProfilePage() {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const { loading, setLoading } = useProfileStore();
 
   const defaultValues: ProfileFormValues = {
     username: user?.username || user?.firstName || '',
@@ -55,8 +67,9 @@ export default function ProfilePage() {
   useEffect(() => {
     form.reset(defaultValues);
     setAvatarUrl(user?.imageUrl || '');
+    setLoading(!isLoaded);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user, isLoaded, setLoading]);
 
   useEffect(() => {
     setMounted(true);
@@ -100,8 +113,12 @@ export default function ProfilePage() {
     }
   }
 
+  if (loading) {
+    return <ProfileSkeleton />;
+  }
+
   return (
-    <div className="max-w-2xl w-full mx-auto px-2 sm:px-4 md:px-8 py-8 overflow-x-hidden">
+    <div className="max-w-2xl w-full mx-auto px-4 sm:px-6 md:px-8 pt-8 pb-6 overflow-x-hidden">
       <Tabs defaultValue="profile" className="w-full">
         <TabsList className="mb-4 w-full max-w-full overflow-x-auto">
           <TabsTrigger value="profile">Profile</TabsTrigger>
@@ -109,10 +126,10 @@ export default function ProfilePage() {
         </TabsList>
         <TabsContent value="profile">
           <Card className="w-full max-w-full">
-            <CardHeader>
+            <CardHeader className="px-4 sm:px-6 md:px-8">
               <CardTitle>Profile</CardTitle>
             </CardHeader>
-            <CardContent className="w-full max-w-full">
+            <CardContent className="w-full max-w-full px-4 sm:px-6 md:px-8">
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 w-full max-w-full">
                   {/* Avatar and upload */}
@@ -201,10 +218,10 @@ export default function ProfilePage() {
         </TabsContent>
         <TabsContent value="appearance">
           <Card className="w-full max-w-full">
-            <CardHeader>
+            <CardHeader className="px-4 sm:px-6 md:px-8">
               <CardTitle>Appearance</CardTitle>
             </CardHeader>
-            <CardContent className="w-full max-w-full">
+            <CardContent className="w-full max-w-full px-4 sm:px-6 md:px-8">
               <div className="flex gap-2 items-center flex-wrap">
                 {mounted && themeOptions.map((opt) => (
                   <button
@@ -273,6 +290,21 @@ function DangerZone() {
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+function ProfileSkeleton() {
+  return (
+    <div className="max-w-2xl w-full mx-auto px-4 sm:px-6 md:px-8 pt-8 pb-6 overflow-x-hidden">
+      <div className="h-8 w-40 bg-muted rounded mb-4 animate-pulse" />
+      <div className="h-16 w-16 bg-muted rounded-full mb-6 animate-pulse" />
+      <div className="space-y-4">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="h-10 bg-muted rounded animate-pulse" />
+        ))}
+      </div>
+      <div className="h-10 w-32 bg-muted rounded mt-8 animate-pulse" />
     </div>
   );
 } 

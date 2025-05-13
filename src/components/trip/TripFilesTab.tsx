@@ -14,6 +14,7 @@ import { Progress } from "@/components/ui/progress";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { Dialog as Modal, DialogContent as ModalContent, DialogHeader as ModalHeader, DialogTitle as ModalTitle } from "@/components/ui/dialog";
+import { create } from 'zustand';
 
 interface TripFilesTabProps {
   tripId: string;
@@ -49,63 +50,86 @@ interface PlaceFile {
   placeName: string;
 }
 
+interface TripFilesState {
+  filesByTrip: Record<string, TripFile[]>;
+  placeFilesByTrip: Record<string, PlaceFile[]>;
+  placesByTrip: Record<string, Place[]>;
+  loadingByTrip: Record<string, boolean>;
+  fetchAll: (tripId: string) => Promise<void>;
+  addTripFile: (tripId: string, file: TripFile) => void;
+  addPlaceFile: (tripId: string, file: PlaceFile) => void;
+  removeTripFile: (tripId: string, fileId: string) => void;
+  removePlaceFile: (tripId: string, fileId: string) => void;
+}
+
+export const useTripFilesStore = create<TripFilesState>((set, get) => ({
+  filesByTrip: {},
+  placeFilesByTrip: {},
+  placesByTrip: {},
+  loadingByTrip: {},
+  async fetchAll(tripId) {
+    set(state => ({ loadingByTrip: { ...state.loadingByTrip, [tripId]: true } }));
+    const [filesRes, placesRes] = await Promise.all([
+      fetch(`/api/trips/${tripId}/files`),
+      fetch(`/api/trips/${tripId}/places`),
+    ]);
+    const files = await filesRes.json();
+    const places = await placesRes.json();
+    // Fetch all place files in parallel
+    const placeFilesArr = await Promise.all(
+      places.map(async (place: Place) => {
+        const pfRes = await fetch(`/api/trips/${tripId}/places/files?placeId=${place.id}`);
+        if (pfRes.ok) {
+          const pf = await pfRes.json();
+          return pf.map((file: any) => ({ ...file, placeId: place.id, placeName: place.name }));
+        }
+        return [];
+      })
+    );
+    const allPlaceFiles = placeFilesArr.flat();
+    set(state => ({
+      filesByTrip: { ...state.filesByTrip, [tripId]: files },
+      placeFilesByTrip: { ...state.placeFilesByTrip, [tripId]: allPlaceFiles },
+      placesByTrip: { ...state.placesByTrip, [tripId]: places },
+      loadingByTrip: { ...state.loadingByTrip, [tripId]: false },
+    }));
+  },
+  addTripFile(tripId, file) {
+    set(state => ({ filesByTrip: { ...state.filesByTrip, [tripId]: [...(state.filesByTrip[tripId] || []), file] } }));
+  },
+  addPlaceFile(tripId, file) {
+    set(state => ({ placeFilesByTrip: { ...state.placeFilesByTrip, [tripId]: [...(state.placeFilesByTrip[tripId] || []), file] } }));
+  },
+  removeTripFile(tripId, fileId) {
+    set(state => ({ filesByTrip: { ...state.filesByTrip, [tripId]: (state.filesByTrip[tripId] || []).filter(f => f.id !== fileId) } }));
+  },
+  removePlaceFile(tripId, fileId) {
+    set(state => ({ placeFilesByTrip: { ...state.placeFilesByTrip, [tripId]: (state.placeFilesByTrip[tripId] || []).filter(f => f.id !== fileId) } }));
+  },
+}));
+
 export function TripFilesTab({ tripId }: TripFilesTabProps) {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [uploading, setUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [allFiles, setAllFiles] = useState<TripFile[]>([]);
+  const { filesByTrip, placeFilesByTrip, placesByTrip, loadingByTrip, fetchAll, addTripFile, addPlaceFile, removeTripFile, removePlaceFile } = useTripFilesStore();
+  const allFiles = filesByTrip[tripId] || [];
+  const placeFiles = placeFilesByTrip[tripId] || [];
+  const places = placesByTrip[tripId] || [];
+  const loading = loadingByTrip[tripId] ?? true;
   const [fileModal, setFileModal] = useState<{ url: string; name: string } | null>(null);
-  const [places, setPlaces] = useState<Place[]>([]);
   const [selectedPlaceId, setSelectedPlaceId] = useState<string>("");
-  const [placeFiles, setPlaceFiles] = useState<PlaceFile[]>([]);
 
-  // Fetch all trip files and places on mount
   useEffect(() => {
-    async function fetchFilesAndPlaces() {
-      const filesRes = await fetch(`/api/trips/${tripId}/files`);
-      const files = await filesRes.json();
-      setAllFiles(files);
-      // Fetch places
-      const placesRes = await fetch(`/api/trips/${tripId}/places`);
-      const placesData = await placesRes.json();
-      setPlaces(placesData);
-      // Fetch all place files for all places
-      const allPlaceFiles: PlaceFile[] = [];
-      for (const place of placesData) {
-        const pfRes = await fetch(`/api/trips/${tripId}/places/files?placeId=${place.id}`);
-        if (pfRes.ok) {
-          const pf = await pfRes.json();
-          for (const file of pf) {
-            allPlaceFiles.push({ ...file, placeId: place.id, placeName: place.name });
-          }
-        }
-      }
-      setPlaceFiles(allPlaceFiles);
+    if (!filesByTrip[tripId]) {
+      fetchAll(tripId);
     }
-    fetchFilesAndPlaces();
-  }, [tripId]);
+  }, [tripId, fetchAll, filesByTrip]);
 
   // After upload, refetch all files
   async function refetchAllFiles() {
-    const filesRes = await fetch(`/api/trips/${tripId}/files`);
-    const files = await filesRes.json();
-    setAllFiles(files);
-    // Refetch places and place files
-    const placesRes = await fetch(`/api/trips/${tripId}/places`);
-    const placesData = await placesRes.json();
-    setPlaces(placesData);
-    const allPlaceFiles: PlaceFile[] = [];
-    for (const place of placesData) {
-      const pfRes = await fetch(`/api/trips/${tripId}/places/files?placeId=${place.id}`);
-      if (pfRes.ok) {
-        const pf = await pfRes.json();
-        for (const file of pf) {
-          allPlaceFiles.push({ ...file, placeId: place.id, placeName: place.name });
-        }
-      }
-    }
-    setPlaceFiles(allPlaceFiles);
+    await fetchAll(tripId);
   }
 
   async function handleFileUpload(file: File) {
@@ -143,17 +167,25 @@ export function TripFilesTab({ tripId }: TripFilesTabProps) {
         );
         // Save file to place or trip
         if (selectedPlaceId) {
-          await fetch(`/api/trips/${tripId}/places/files`, {
+          const res = await fetch(`/api/trips/${tripId}/places/files`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ placeId: selectedPlaceId, url: result.secure_url, name: file.name }),
           });
+          if (res.ok) {
+            const pf = await res.json();
+            addPlaceFile(tripId, { ...pf, placeId: selectedPlaceId, placeName: places.find(p => p.id === selectedPlaceId)?.name || "" });
+          }
         } else {
-          await fetch(`/api/trips/${tripId}/files`, {
+          const res = await fetch(`/api/trips/${tripId}/files`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ url: result.secure_url, name: file.name }),
           });
+          if (res.ok) {
+            const tf = await res.json();
+            addTripFile(tripId, tf);
+          }
         }
       } else {
         setUploadedFiles(prev => prev.filter(f => f.id !== tempId));
@@ -212,21 +244,31 @@ export function TripFilesTab({ tripId }: TripFilesTabProps) {
   }
 
   async function handleDeleteFile(fileId: string) {
-    await fetch(`/api/trips/${tripId}/files`, {
+    const res = await fetch(`/api/trips/${tripId}/files`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id: fileId }),
     });
-    await refetchAllFiles();
+    if (res.ok) {
+      removeTripFile(tripId, fileId);
+      await refetchAllFiles();
+    }
   }
 
   async function handleDeletePlaceFile(fileId: string) {
-    await fetch(`/api/trips/${tripId}/places/files`, {
+    const res = await fetch(`/api/trips/${tripId}/places/files`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id: fileId }),
     });
-    await refetchAllFiles();
+    if (res.ok) {
+      removePlaceFile(tripId, fileId);
+      await refetchAllFiles();
+    }
+  }
+
+  if (loading) {
+    return <FilesSkeleton />;
   }
 
   return (
@@ -411,5 +453,15 @@ export function TripFilesTab({ tripId }: TripFilesTabProps) {
         </ModalContent>
       </Modal>
     </Card>
+  );
+}
+
+function FilesSkeleton() {
+  return (
+    <div className="space-y-4 p-4">
+      {[...Array(3)].map((_, i) => (
+        <div key={i} className="animate-pulse bg-muted rounded p-4 h-20" />
+      ))}
+    </div>
   );
 } 

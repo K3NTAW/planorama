@@ -5,6 +5,8 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { CreateTripButton } from "@/components/ui/CreateTripButton";
 import Image from "next/image";
+import { create } from 'zustand';
+import { Button } from "@/components/ui/button";
 
 export interface Trip {
   id: string;
@@ -16,21 +18,38 @@ export interface Trip {
   userId: string;
 }
 
-export function TripList({ userId }: { userId: string }) {
-  const [trips, setTrips] = useState<Trip[]>([]);
-  const [loading, setLoading] = useState(true);
+interface TripsState {
+  trips: Trip[];
+  loading: boolean;
+  fetchTrips: () => Promise<void>;
+  addTrip: (trip: Trip) => void;
+  removeTrip: (tripId: string) => void;
+}
 
-  async function fetchTrips() {
-    setLoading(true);
+export const useTripsStore = create<TripsState>((set, get) => ({
+  trips: [],
+  loading: true,
+  async fetchTrips() {
+    set({ loading: true });
     const res = await fetch("/api/trips");
     const data = await res.json();
-    setTrips(data || []);
-    setLoading(false);
-  }
+    set({ trips: data || [], loading: false });
+  },
+  addTrip(trip) {
+    set(state => ({ trips: [...state.trips, trip] }));
+  },
+  removeTrip(tripId) {
+    set(state => ({ trips: state.trips.filter(trip => trip.id !== tripId) }));
+  },
+}));
 
+export function TripList({ userId }: { userId: string }) {
+  const { trips, loading, fetchTrips, addTrip, removeTrip } = useTripsStore();
   useEffect(() => {
-    fetchTrips();
-  }, []);
+    if (trips.length === 0) {
+      fetchTrips();
+    }
+  }, [fetchTrips, trips.length]);
 
   // Called after a trip is created
   async function handleTripCreated() {
@@ -39,7 +58,7 @@ export function TripList({ userId }: { userId: string }) {
 
   // Called after a trip is deleted
   function handleTripDeleted(deletedTripId: string) {
-    setTrips(prev => prev.filter(trip => trip.id !== deletedTripId));
+    removeTrip(deletedTripId);
   }
 
   return (
@@ -50,7 +69,7 @@ export function TripList({ userId }: { userId: string }) {
       </div>
       <div className="grid gap-4 w-full max-w-full">
         {loading ? (
-          <div className="text-gray-500">Loading...</div>
+          <TripsSkeleton />
         ) : trips.length === 0 ? (
           <div className="text-gray-500">No trips found. Start by creating a new trip!</div>
         ) : (
@@ -84,7 +103,9 @@ export function TripList({ userId }: { userId: string }) {
                         {trip.endDate ? ` - ${format(new Date(trip.endDate), 'yyyy-MM-dd')}` : ''}
                       </div>
                     </div>
-                    <Link href={`/trips/${trip.id}`} className="mt-2 md:mt-0 text-blue-600 hover:underline">View Details</Link>
+                    <Button asChild className="mt-2 md:mt-0">
+                      <Link href={`/trips/${trip.id}`}>View Details</Link>
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -92,6 +113,16 @@ export function TripList({ userId }: { userId: string }) {
           })
         )}
       </div>
+    </div>
+  );
+}
+
+function TripsSkeleton() {
+  return (
+    <div className="space-y-4">
+      {[...Array(3)].map((_, i) => (
+        <div key={i} className="animate-pulse bg-muted rounded p-6 h-32" />
+      ))}
     </div>
   );
 } 

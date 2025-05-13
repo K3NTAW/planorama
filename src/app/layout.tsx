@@ -33,7 +33,9 @@ export default async function RootLayout({
       <body className={`${inter.variable} antialiased bg-brand-50 dark:bg-brand-900 min-h-screen`}>
         <ClerkProvider>
           <Providers>
-            {children}
+            <div className="px-4 sm:px-6 md:px-8 w-full">
+              {children}
+            </div>
           </Providers>
         </ClerkProvider>
         {/* Mobile bottom nav */}
