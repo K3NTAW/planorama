@@ -29,4 +29,17 @@ export async function POST(req: NextRequest) {
     data: { placeId, url, name },
   });
   return NextResponse.json(file);
+}
+
+// DELETE /api/trips/[tripId]/places/files
+// Body: { id: string }
+export async function DELETE(req: NextRequest) {
+  const { id } = await req.json();
+  if (!id) {
+    return NextResponse.json({ error: 'Missing file id' }, { status: 400 });
+  }
+  await prisma.placeFile.delete({
+    where: { id },
+  });
+  return NextResponse.json({ success: true });
 } 

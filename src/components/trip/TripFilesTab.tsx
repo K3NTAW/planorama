@@ -35,6 +35,20 @@ interface TripFile {
   createdAt: string;
 }
 
+interface Place {
+  id: string;
+  name: string;
+}
+
+interface PlaceFile {
+  id: string;
+  url: string;
+  name: string;
+  createdAt: string;
+  placeId: string;
+  placeName: string;
+}
+
 export function TripFilesTab({ tripId }: TripFilesTabProps) {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -42,15 +56,34 @@ export function TripFilesTab({ tripId }: TripFilesTabProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [allFiles, setAllFiles] = useState<TripFile[]>([]);
   const [fileModal, setFileModal] = useState<{ url: string; name: string } | null>(null);
+  const [places, setPlaces] = useState<Place[]>([]);
+  const [selectedPlaceId, setSelectedPlaceId] = useState<string>("");
+  const [placeFiles, setPlaceFiles] = useState<PlaceFile[]>([]);
 
-  // Fetch all trip files on mount
+  // Fetch all trip files and places on mount
   useEffect(() => {
-    async function fetchFiles() {
+    async function fetchFilesAndPlaces() {
       const filesRes = await fetch(`/api/trips/${tripId}/files`);
       const files = await filesRes.json();
       setAllFiles(files);
+      // Fetch places
+      const placesRes = await fetch(`/api/trips/${tripId}/places`);
+      const placesData = await placesRes.json();
+      setPlaces(placesData);
+      // Fetch all place files for all places
+      const allPlaceFiles: PlaceFile[] = [];
+      for (const place of placesData) {
+        const pfRes = await fetch(`/api/trips/${tripId}/places/files?placeId=${place.id}`);
+        if (pfRes.ok) {
+          const pf = await pfRes.json();
+          for (const file of pf) {
+            allPlaceFiles.push({ ...file, placeId: place.id, placeName: place.name });
+          }
+        }
+      }
+      setPlaceFiles(allPlaceFiles);
     }
-    fetchFiles();
+    fetchFilesAndPlaces();
   }, [tripId]);
 
   // After upload, refetch all files
@@ -58,6 +91,21 @@ export function TripFilesTab({ tripId }: TripFilesTabProps) {
     const filesRes = await fetch(`/api/trips/${tripId}/files`);
     const files = await filesRes.json();
     setAllFiles(files);
+    // Refetch places and place files
+    const placesRes = await fetch(`/api/trips/${tripId}/places`);
+    const placesData = await placesRes.json();
+    setPlaces(placesData);
+    const allPlaceFiles: PlaceFile[] = [];
+    for (const place of placesData) {
+      const pfRes = await fetch(`/api/trips/${tripId}/places/files?placeId=${place.id}`);
+      if (pfRes.ok) {
+        const pf = await pfRes.json();
+        for (const file of pf) {
+          allPlaceFiles.push({ ...file, placeId: place.id, placeName: place.name });
+        }
+      }
+    }
+    setPlaceFiles(allPlaceFiles);
   }
 
   async function handleFileUpload(file: File) {
@@ -93,12 +141,20 @@ export function TripFilesTab({ tripId }: TripFilesTabProps) {
               : f
           )
         );
-        // Save file to trip
-        await fetch(`/api/trips/${tripId}/files`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url: result.secure_url, name: file.name }),
-        });
+        // Save file to place or trip
+        if (selectedPlaceId) {
+          await fetch(`/api/trips/${tripId}/places/files`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ placeId: selectedPlaceId, url: result.secure_url, name: file.name }),
+          });
+        } else {
+          await fetch(`/api/trips/${tripId}/files`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url: result.secure_url, name: file.name }),
+          });
+        }
       } else {
         setUploadedFiles(prev => prev.filter(f => f.id !== tempId));
       }
@@ -164,8 +220,32 @@ export function TripFilesTab({ tripId }: TripFilesTabProps) {
     await refetchAllFiles();
   }
 
+  async function handleDeletePlaceFile(fileId: string) {
+    await fetch(`/api/trips/${tripId}/places/files`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: fileId }),
+    });
+    await refetchAllFiles();
+  }
+
   return (
     <Card className="p-6 bg-background border-border w-full">
+      {/* Place selection dropdown - moved above upload area */}
+      <div className="w-full mb-4">
+        <label className="block text-sm font-medium mb-1">Assign to Place (optional)</label>
+        <select
+          className="w-full border rounded px-3 py-2"
+          value={selectedPlaceId}
+          onChange={e => setSelectedPlaceId(e.target.value)}
+          disabled={uploading || places.length === 0}
+        >
+          <option value="">No place (trip-level file)</option>
+          {places.map(place => (
+            <option key={place.id} value={place.id}>{place.name}</option>
+          ))}
+        </select>
+      </div>
       {/* Upload area */}
       <div
         className={cn(
@@ -223,43 +303,96 @@ export function TripFilesTab({ tripId }: TripFilesTabProps) {
       {/* All files list */}
       <div>
         <h3 className="font-semibold mb-4 text-foreground">
-          {allFiles.length > 0 
-            ? `All Uploaded Files (${allFiles.length})` 
+          {allFiles.length + placeFiles.length > 0 
+            ? `All Uploaded Files (${allFiles.length + placeFiles.length})` 
             : "No files uploaded yet"
           }
         </h3>
-        <div className="space-y-3">
-          {allFiles.map((file) => (
-            <div 
-              key={file.id} 
-              className="flex items-start gap-3 p-3 rounded-md bg-secondary/40 border border-border relative"
-            >
-              <div className="flex-shrink-0 text-muted-foreground">
-                <FileIcon className="h-8 w-8" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex justify-between">
-                  <h4 className="font-medium text-sm truncate text-foreground cursor-pointer" title={file.name} onClick={() => setFileModal({ url: file.url, name: file.name })}>
-                    {file.name}
-                  </h4>
-                  <div className="flex items-center gap-1">
-                    <Button size="sm" variant="secondary" asChild>
-                      <a href={file.url} target="_blank" rel="noopener noreferrer" download>
-                        Download
-                      </a>
-                    </Button>
-                    <Button size="sm" variant="destructive" onClick={() => handleDeleteFile(file.id)}>
-                      <Trash2 className="h-4 w-4 mr-1" /> Delete
-                    </Button>
+        {/* Trip-level files */}
+        {allFiles.length > 0 && (
+          <div className="mb-6">
+            <h4 className="font-medium mb-2">Trip Files</h4>
+            <div className="space-y-3">
+              {allFiles.map((file) => (
+                <div 
+                  key={file.id} 
+                  className="flex items-start gap-3 p-3 rounded-md bg-secondary/40 border border-border relative"
+                >
+                  <div className="flex-shrink-0 text-muted-foreground">
+                    <FileIcon className="h-8 w-8" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between">
+                      <h4 className="font-medium text-sm truncate text-foreground cursor-pointer" title={file.name} onClick={() => setFileModal({ url: file.url, name: file.name })}>
+                        {file.name}
+                      </h4>
+                      <div className="flex items-center gap-1">
+                        <Button size="sm" variant="secondary" asChild>
+                          <a href={file.url} target="_blank" rel="noopener noreferrer" download>
+                            Download
+                          </a>
+                        </Button>
+                        <Button size="sm" variant="destructive" onClick={() => handleDeleteFile(file.id)}>
+                          <Trash2 className="h-4 w-4 mr-1" /> Delete
+                        </Button>
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Uploaded: {new Date(file.createdAt).toLocaleString()}
+                    </p>
                   </div>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Uploaded: {new Date(file.createdAt).toLocaleString()}
-                </p>
-              </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </div>
+        )}
+        {/* Place-level files, grouped by place */}
+        {places.length > 0 && placeFiles.length > 0 && (
+          <div>
+            <h4 className="font-medium mb-2">Place Files</h4>
+            {places.map(place => {
+              const filesForPlace = placeFiles.filter(f => f.placeId === place.id);
+              if (filesForPlace.length === 0) return null;
+              return (
+                <div key={place.id} className="mb-4">
+                  <div className="font-semibold mb-1">{place.name}</div>
+                  <div className="space-y-3">
+                    {filesForPlace.map(file => (
+                      <div 
+                        key={file.id} 
+                        className="flex items-start gap-3 p-3 rounded-md bg-secondary/40 border border-border relative"
+                      >
+                        <div className="flex-shrink-0 text-muted-foreground">
+                          <FileIcon className="h-8 w-8" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex justify-between">
+                            <h4 className="font-medium text-sm truncate text-foreground cursor-pointer" title={file.name} onClick={() => setFileModal({ url: file.url, name: file.name })}>
+                              {file.name}
+                            </h4>
+                            <div className="flex items-center gap-1">
+                              <Button size="sm" variant="secondary" asChild>
+                                <a href={file.url} target="_blank" rel="noopener noreferrer" download>
+                                  Download
+                                </a>
+                              </Button>
+                              <Button size="sm" variant="destructive" onClick={() => handleDeletePlaceFile(file.id)}>
+                                <Trash2 className="h-4 w-4 mr-1" /> Delete
+                              </Button>
+                            </div>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Uploaded: {new Date(file.createdAt).toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
       {/* File modal */}
       <Modal open={!!fileModal} onOpenChange={open => !open && setFileModal(null)}>
