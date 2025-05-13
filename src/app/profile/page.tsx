@@ -1,4 +1,5 @@
 "use client";
+export const dynamic = 'force-dynamic';
 import { useUser } from '@clerk/nextjs';
 import { useEffect } from 'react';
 import { z } from "zod";
@@ -22,7 +23,7 @@ import { useTheme } from "next-themes";
 import { Sun, Moon, Laptop } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useClerk } from "@clerk/nextjs";
-import { create } from 'zustand';
+import { useProfileStore } from '@/store/useProfileStore';
 
 const profileSchema = z.object({
   username: z.string().min(2, { message: 'Username must be at least 2 characters.' }),
@@ -31,16 +32,6 @@ const profileSchema = z.object({
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
-
-interface ProfileState {
-  loading: boolean;
-  setLoading: (loading: boolean) => void;
-}
-
-export const useProfileStore = create<ProfileState>((set) => ({
-  loading: true,
-  setLoading: (loading) => set({ loading }),
-}));
 
 export default function ProfilePage() {
   const { user, isLoaded } = useUser();
