@@ -92,7 +92,7 @@ export function TripSettingsTab({ tripId }: { tripId: string }) {
               {collaborators.map((c: Collaborator) => (
                 <li key={c.userId} className="flex items-center gap-3 p-2 rounded-lg bg-muted/50">
                   <Avatar className="h-9 w-9">
-                    <AvatarImage src={c.user?.avatarUrl} alt={c.user?.firstName || ''} />
+                    <AvatarImage src={c.user?.avatarUrl || ''} alt={c.user?.firstName || ''} />
                     <AvatarFallback>
                       {c.user?.firstName?.[0] || <UserIcon size={18} />}
                     </AvatarFallback>
