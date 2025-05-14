@@ -10,6 +10,7 @@ export interface Place {
   date?: string;
   latitude?: number | null;
   longitude?: number | null;
+  tripId?: string;
 }
 
 export interface Accommodation {
@@ -21,6 +22,7 @@ export interface Accommodation {
   link?: string;
   latitude?: number | null;
   longitude?: number | null;
+  tripId?: string;
 }
 
 interface DailyState {

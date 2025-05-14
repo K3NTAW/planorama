@@ -1,15 +1,63 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useDailyStore } from '@/store/useDailyStore';
 import { TripMap } from '@/components/trip/TripMap';
+import { getAblyClient } from '@/lib/ablyClient';
 
 export default function DailyPage() {
   const { todayPlaces, todayAccommodations, loading, fetchToday } = useDailyStore();
+  const ablyRef = useRef<any>(null);
+  const unsubscribesRef = useRef<(() => void)[]>([]);
+
   useEffect(() => {
     if (todayPlaces.length === 0 && todayAccommodations.length === 0) {
       fetchToday();
     }
   }, [fetchToday, todayPlaces.length, todayAccommodations.length]);
+
+  // Real-time Ably subscription for daily view
+  useEffect(() => {
+    let isMounted = true;
+    let ably: any = null;
+    let channels: any[] = [];
+    let unsubscribes: (() => void)[] = [];
+    async function setupAbly() {
+      ably = await getAblyClient();
+      ablyRef.current = ably;
+      // Get all unique trip IDs from today's places and accommodations
+      const tripIds = Array.from(new Set([
+        ...todayPlaces.map(p => p.tripId).filter(Boolean),
+        ...todayAccommodations.map(a => a.tripId).filter(Boolean),
+      ]));
+      channels = [
+        ...tripIds.map(id => ably.channels.get(`places:${id}`)),
+        ...tripIds.map(id => ably.channels.get(`accommodations:${id}`)),
+      ];
+      const handleEvent = () => { if (isMounted) fetchToday(); };
+      channels.forEach(channel => {
+        channel.subscribe('place-created', handleEvent);
+        channel.subscribe('place-updated', handleEvent);
+        channel.subscribe('place-deleted', handleEvent);
+        channel.subscribe('accommodation-created', handleEvent);
+        channel.subscribe('accommodation-updated', handleEvent);
+        channel.subscribe('accommodation-deleted', handleEvent);
+        unsubscribes.push(
+          () => channel.unsubscribe('place-created', handleEvent),
+          () => channel.unsubscribe('place-updated', handleEvent),
+          () => channel.unsubscribe('place-deleted', handleEvent),
+          () => channel.unsubscribe('accommodation-created', handleEvent),
+          () => channel.unsubscribe('accommodation-updated', handleEvent),
+          () => channel.unsubscribe('accommodation-deleted', handleEvent),
+        );
+      });
+      unsubscribesRef.current = unsubscribes;
+    }
+    setupAbly();
+    return () => {
+      isMounted = false;
+      unsubscribesRef.current.forEach(fn => fn());
+    };
+  }, [todayPlaces, todayAccommodations, fetchToday]);
 
   // Prepare map locations
   const mapLocations = [

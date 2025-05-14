@@ -12,6 +12,7 @@ import { TripSettingsTab } from '@/components/trip/TripSettingsTab';
 import { TripFilesTab } from '@/components/trip/TripFilesTab';
 import { Card } from '@/components/ui/card';
 import { TripMap } from '@/components/trip/TripMap';
+import { TripMapTab } from '@/components/trip/TripMapTab';
 
 const prisma = new PrismaClient();
 
@@ -99,7 +100,7 @@ export default async function TripDetailsPage(props: any) {
         </TabsContent>
         <TabsContent value="map">
           <Card className="w-full max-w-full p-2 md:p-4">
-            <TripMap locations={mapLocations} />
+            <TripMapTab tripId={tripId} />
           </Card>
         </TabsContent>
         <TabsContent value="settings">
