@@ -193,6 +193,7 @@ export function TripPlaces({ tripId }: { tripId: string }) {
         setUploadedFile(null);
         setFileProgress(0);
         reset();
+        setDialogOpen(false);
       }
     });
   };
@@ -239,6 +240,7 @@ export function TripPlaces({ tripId }: { tripId: string }) {
       setEditingId(null);
       setEditForm({});
       setEditErrors({});
+      setEditDialogOpen(false);
       return true;
     }
     return false;

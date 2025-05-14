@@ -217,6 +217,7 @@ export function TripFilesTab({ tripId }: TripFilesTabProps) {
             addTripFile(tripId, tf);
           }
         }
+        setFileModal(null);
       } else {
         setUploadedFiles(prev => prev.filter(f => f.id !== tempId));
       }
