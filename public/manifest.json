@@ -3,8 +3,8 @@
   "short_name": "Planorama",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#18181B",
-  "theme_color": "#2563eb",
+  "background_color": "#f9fafb",
+  "theme_color": "#f9fafb",
   "description": "Planorama: Plan and manage your trips with ease!",
   "icons": [
     {
