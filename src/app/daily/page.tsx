@@ -136,6 +136,8 @@ export default function DailyPage() {
           )}
         </div>
       )}
+      {/* Extra bottom padding for nav bar */}
+      <div className="h-24" />
     </div>
   );
 }

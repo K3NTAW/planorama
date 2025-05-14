@@ -230,6 +230,8 @@ export default function ProfilePage() {
           </Card>
         </TabsContent>
       </Tabs>
+      {/* Extra bottom padding for nav bar */}
+      <div className="h-24" />
     </div>
   );
 }
