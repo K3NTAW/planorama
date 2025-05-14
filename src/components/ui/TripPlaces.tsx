@@ -92,6 +92,9 @@ export function TripPlaces({ tripId }: { tripId: string }) {
   const [fileModalUrl, setFileModalUrl] = useState<string | null>(null);
   const [showFilesDialog, setShowFilesDialog] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const placesRef = useRef(places);
+
+  useEffect(() => { placesRef.current = places; }, [places]);
 
   useEffect(() => {
     if (!placesByTrip[tripId]) {
@@ -110,7 +113,7 @@ export function TripPlaces({ tripId }: { tripId: string }) {
       channel = ably.channels.get(`places:${tripId}`);
       const handlePlaceCreated = (msg: any) => {
         console.log("Ably event received", msg.data);
-        if (!(placesByTrip[tripId] || []).some(p => p.id === msg.data.id)) {
+        if (!(placesRef.current || []).some(p => p.id === msg.data.id)) {
           addPlace(tripId, msg.data);
         }
       };
@@ -131,7 +134,7 @@ export function TripPlaces({ tripId }: { tripId: string }) {
       unsubscribes.forEach(fn => fn());
       // Do not close the singleton ably client here, just unsubscribe
     };
-  }, [tripId, addPlace, removePlace, updatePlace, placesByTrip]);
+  }, [tripId, addPlace, removePlace, updatePlace]);
 
   async function handleFileUpload(file: File) {
     if (!file) return;

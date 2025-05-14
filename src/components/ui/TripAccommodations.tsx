@@ -84,6 +84,8 @@ export function TripAccommodations({ tripId }: { tripId: string }) {
   const { resolvedTheme } = useTheme();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const accommodationsRef = useRef(accommodations);
+  useEffect(() => { accommodationsRef.current = accommodations; }, [accommodations]);
 
   useEffect(() => {
     if (!accommodationsByTrip[tripId]) {
@@ -100,7 +102,7 @@ export function TripAccommodations({ tripId }: { tripId: string }) {
       ably = await getAblyClient();
       channel = ably.channels.get(`accommodations:${tripId}`);
       const handleCreated = (msg: any) => {
-        if (!(accommodationsByTrip[tripId] || []).some(a => a.id === msg.data.id)) {
+        if (!(accommodationsRef.current || []).some(a => a.id === msg.data.id)) {
           addAccommodation(tripId, msg.data);
         }
       };
@@ -119,9 +121,8 @@ export function TripAccommodations({ tripId }: { tripId: string }) {
     return () => {
       isMounted = false;
       unsubscribes.forEach(fn => fn());
-      // Do not close the singleton ably client here, just unsubscribe
     };
-  }, [tripId, addAccommodation, removeAccommodation, updateAccommodation, accommodationsByTrip]);
+  }, [tripId, addAccommodation, removeAccommodation, updateAccommodation]);
 
   const onSubmit = (data: any) => {
     startTransition(async () => {
