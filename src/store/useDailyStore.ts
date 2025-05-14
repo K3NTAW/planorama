@@ -8,6 +8,8 @@ export interface Place {
   link?: string;
   notes?: string;
   date?: string;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export interface Accommodation {
@@ -17,6 +19,8 @@ export interface Accommodation {
   checkIn: string;
   checkOut: string;
   link?: string;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 interface DailyState {

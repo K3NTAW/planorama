@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useDailyStore } from '@/store/useDailyStore';
+import { TripMap } from '@/components/trip/TripMap';
 
 export default function DailyPage() {
   const { todayPlaces, todayAccommodations, loading, fetchToday } = useDailyStore();
@@ -9,6 +10,28 @@ export default function DailyPage() {
       fetchToday();
     }
   }, [fetchToday, todayPlaces.length, todayAccommodations.length]);
+
+  // Prepare map locations
+  const mapLocations = [
+    ...todayPlaces.filter(p => typeof p.latitude === 'number' && typeof p.longitude === 'number' && p.latitude !== null && p.longitude !== null)
+      .map(p => ({
+        id: p.id,
+        name: p.name,
+        latitude: Number(p.latitude),
+        longitude: Number(p.longitude),
+        notes: p.notes,
+        type: p.type || 'place',
+      })),
+    ...todayAccommodations.filter(a => typeof a.latitude === 'number' && typeof a.longitude === 'number' && a.latitude !== null && a.longitude !== null)
+      .map(a => ({
+        id: a.id,
+        name: a.name,
+        latitude: Number(a.latitude),
+        longitude: Number(a.longitude),
+        notes: a.address,
+        type: 'accommodation',
+      })),
+  ];
 
   return (
     <div className="flex flex-col items-center min-h-[80vh] w-full max-w-full px-2 sm:px-4 md:px-6 py-6 bg-background overflow-x-hidden">
@@ -57,6 +80,12 @@ export default function DailyPage() {
               </div>
             )}
           </div>
+          {/* Map Section at the bottom */}
+          {mapLocations.length > 0 && (
+            <div className="mt-8">
+              <TripMap locations={mapLocations} />
+            </div>
+          )}
         </div>
       )}
     </div>
