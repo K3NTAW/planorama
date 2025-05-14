@@ -10,6 +10,7 @@ import { ShareTripButton } from '@/components/ui/ShareTripButton';
 import { AcceptInviteDialog } from '@/components/ui/AcceptInviteDialog';
 import { TripSettingsTab } from '@/components/trip/TripSettingsTab';
 import { TripFilesTab } from '@/components/trip/TripFilesTab';
+import { Card } from '@/components/ui/card';
 
 const prisma = new PrismaClient();
 
@@ -23,34 +24,41 @@ export default async function TripDetailsPage(props: any) {
   if (!trip) return notFound();
 
   return (
-    <div className="max-w-3xl w-full mx-auto px-2 sm:px-4 md:px-6 py-6 overflow-x-hidden">
+    <Card className="w-full max-w-3xl mx-auto p-0 bg-background border-0 shadow-none rounded-none min-h-[100dvh]">
       {/* Accept invite dialog on page load */}
       <AcceptInviteDialog tripId={tripId} />
+      {/* MOBILE-FIRST: Banner image */}
       {trip.bannerUrl && (
         <Image
           src={trip.bannerUrl}
           alt={trip.name}
           width={800}
           height={224}
-          className="w-full max-w-full h-56 object-cover rounded-md mb-6 border border-border"
+          className="w-full h-44 sm:h-56 object-cover rounded-xl shadow-md mb-4 border border-border"
+          priority
         />
       )}
-      <div className="mb-6 flex flex-col sm:flex-row items-center justify-between w-full max-w-full gap-4">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">{trip.name}</h1>
-          <div className="text-lg text-gray-600 mb-1">Destination: {trip.destination}</div>
-          <div className="text-gray-500 text-sm mb-2">
-            {trip.startDate ? format(new Date(trip.startDate), 'yyyy-MM-dd') : ''}
-            {trip.endDate ? ` - ${format(new Date(trip.endDate), 'yyyy-MM-dd')}` : ''}
-          </div>
+      {/* MOBILE-FIRST: Trip info, center-aligned */}
+      <div className="flex flex-col items-center text-center px-4 pt-2 pb-4">
+        <h1 className="text-2xl sm:text-3xl font-bold mb-1 text-foreground">{trip.name}</h1>
+        <div className="text-base sm:text-lg text-muted-foreground mb-1">Destination: {trip.destination}</div>
+        <div className="text-sm text-muted-foreground mb-2">
+          {trip.startDate ? format(new Date(trip.startDate), 'yyyy-MM-dd') : ''}
+          {trip.endDate ? ` - ${format(new Date(trip.endDate), 'yyyy-MM-dd')}` : ''}
+        </div>
+        {/* MOBILE-FIRST: Action buttons row */}
+        <div className="flex flex-row gap-2 justify-center mt-2 mb-1 w-full">
+          <ShareTripButton tripId={tripId} />
+          <TripDeleteButtonWithConfirm tripId={tripId} />
         </div>
       </div>
-      <Tabs defaultValue="places" className="w-full max-w-full">
-        <TabsList className="mb-4 w-full max-w-full overflow-x-auto">
-          <TabsTrigger value="places">Places</TabsTrigger>
-          <TabsTrigger value="accommodation">Accommodation</TabsTrigger>
-          <TabsTrigger value="files">Files</TabsTrigger>
-          <TabsTrigger value="settings">Settings</TabsTrigger>
+      {/* MOBILE-FIRST: Sticky, scrollable tabs */}
+      <Tabs defaultValue="places" className="w-full max-w-full px-0">
+        <TabsList className="sticky top-0 z-30 w-full max-w-full overflow-x-auto bg-background/95 backdrop-blur border-b border-border flex gap-2 px-2 py-2">
+          <TabsTrigger value="places" className="min-w-[90px] h-10 text-base">Places</TabsTrigger>
+          <TabsTrigger value="accommodation" className="min-w-[140px] h-10 text-base">Accommodation</TabsTrigger>
+          <TabsTrigger value="files" className="min-w-[80px] h-10 text-base">Files</TabsTrigger>
+          <TabsTrigger value="settings" className="min-w-[100px] h-10 text-base">Settings</TabsTrigger>
         </TabsList>
         <TabsContent value="places">
           <div className="w-full max-w-full"><TripPlaces tripId={tripId} /></div>
@@ -65,6 +73,8 @@ export default async function TripDetailsPage(props: any) {
           <TripSettingsTab tripId={tripId} />
         </TabsContent>
       </Tabs>
-    </div>
+      {/* MOBILE-FIRST: Extra bottom padding for nav bar */}
+      <div className="h-24" />
+    </Card>
   );
 } 

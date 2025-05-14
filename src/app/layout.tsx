@@ -30,7 +30,7 @@ export default async function RootLayout({
         <meta name="theme-color" content="#2563eb" />
         <link rel="apple-touch-icon" sizes="180x180" href="/planorama-logo.png" />
       </head>
-      <body className={`${inter.variable} antialiased bg-brand-50 dark:bg-brand-900 min-h-screen`}>
+      <body className={`${inter.variable} antialiased bg-background dark:bg-background min-h-screen`}>
         <ClerkProvider>
           <Providers>
             <div className="px-4 sm:px-6 md:px-8 w-full">
