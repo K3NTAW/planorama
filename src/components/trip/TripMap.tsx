@@ -30,6 +30,9 @@ export const TripMap: React.FC<TripMapProps> = ({ locations }) => {
     if (mapRef.current) return; // Prevent re-initialization
     if (!locations.length) return;
 
+    // Detect dark mode
+    const isDark = typeof window !== 'undefined' && document.documentElement.classList.contains('dark');
+
     // Center on the first location or a default
     const center: [number, number] = locations.length
       ? [locations[0].longitude, locations[0].latitude]
@@ -60,7 +63,7 @@ export const TripMap: React.FC<TripMapProps> = ({ locations }) => {
       el.innerHTML = loc.type === 'accommodation' ? '🏨' : '📍';
 
       const popupHtml = `
-        <div style="min-width:180px;max-width:240px;">
+        <div class="popup-content${isDark ? ' dark' : ''}" style="min-width:180px;max-width:240px;">
           <div style="font-weight:bold;font-size:1.1em;">${loc.name}</div>
           ${loc.notes ? `<div style='margin:6px 0;'>${loc.notes}</div>` : ''}
           ${loc.imageUrl ? `<img src='${loc.imageUrl}' alt='${loc.name}' style='width:100%;border-radius:8px;margin-bottom:6px;' />` : ''}
@@ -86,6 +89,13 @@ export const TripMap: React.FC<TripMapProps> = ({ locations }) => {
       <style>{`
         .trip-map-marker { cursor: pointer; }
         .mapboxgl-popup-content { font-family: inherit; }
+        .popup-content.dark, .dark .mapboxgl-popup-content {
+          background: #18181b !important;
+          color: #fff !important;
+        }
+        .popup-content.dark a, .dark .mapboxgl-popup-content a {
+          color: #60a5fa !important;
+        }
       `}</style>
     </div>
   );
