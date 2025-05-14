@@ -87,6 +87,7 @@ export function TripAccommodations({ tripId }: { tripId: string }) {
         const newAccommodation = await res.json();
         addAccommodation(tripId, newAccommodation);
         reset();
+        setDialogOpen(false);
       }
     });
   };
