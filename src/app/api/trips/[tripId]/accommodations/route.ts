@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { auth } from '@clerk/nextjs/server';
+import Ably from 'ably';
 
 const prisma = new PrismaClient();
 
@@ -11,7 +12,17 @@ export async function GET(req: NextRequest, { params }: { params: { tripId: stri
   const accommodations = await prisma.accommodation.findMany({
     where: { tripId },
     orderBy: { checkIn: 'asc' },
-    include: { user: true },
+    select: {
+      id: true,
+      name: true,
+      address: true,
+      checkIn: true,
+      checkOut: true,
+      link: true,
+      latitude: true,
+      longitude: true,
+      user: true,
+    },
   });
   return NextResponse.json(accommodations);
 }
@@ -20,7 +31,7 @@ export async function POST(req: NextRequest, { params }: { params: { tripId: str
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const tripId = params.tripId;
-  const { name, address, checkIn, checkOut, link } = await req.json();
+  const { name, address, checkIn, checkOut, link, latitude, longitude } = await req.json();
   if (!name || !address || !checkIn || !checkOut) {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
   }
@@ -32,10 +43,25 @@ export async function POST(req: NextRequest, { params }: { params: { tripId: str
       checkIn: new Date(checkIn),
       checkOut: new Date(checkOut),
       link,
+      latitude,
+      longitude,
       userId: userId,
     },
-    include: { user: true },
+    select: {
+      id: true,
+      name: true,
+      address: true,
+      checkIn: true,
+      checkOut: true,
+      link: true,
+      latitude: true,
+      longitude: true,
+      user: true,
+    },
   });
+  // Publish Ably event for real-time update
+  const ably = new Ably.Rest(process.env.ABLY_API_KEY!);
+  await ably.channels.get(`accommodations:${tripId}`).publish('accommodation-created', accommodation);
   return NextResponse.json(accommodation, { status: 201 });
 }
 
@@ -58,7 +84,7 @@ export async function PUT(req: NextRequest, { params }: { params: { tripId: stri
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const tripId = params.tripId;
-  const { id, name, address, checkIn, checkOut, link } = await req.json();
+  const { id, name, address, checkIn, checkOut, link, latitude, longitude } = await req.json();
   if (!id || !name || !address || !checkIn || !checkOut) {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
   }
@@ -69,7 +95,18 @@ export async function PUT(req: NextRequest, { params }: { params: { tripId: stri
   }
   const updated = await prisma.accommodation.update({
     where: { id },
-    data: { name, address, checkIn: new Date(checkIn), checkOut: new Date(checkOut), link },
+    data: { name, address, checkIn: new Date(checkIn), checkOut: new Date(checkOut), link, latitude, longitude },
+    select: {
+      id: true,
+      name: true,
+      address: true,
+      checkIn: true,
+      checkOut: true,
+      link: true,
+      latitude: true,
+      longitude: true,
+      user: true,
+    },
   });
   return NextResponse.json(updated);
 } 

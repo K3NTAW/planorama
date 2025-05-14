@@ -38,7 +38,18 @@ export const useTripAccommodationsStore = create<TripAccommodationsState>((set, 
     }));
   },
   addAccommodation(tripId, acc) {
-    set(state => ({ accommodationsByTrip: { ...state.accommodationsByTrip, [tripId]: [...(state.accommodationsByTrip[tripId] || []), acc] } }));
+    set(state => {
+      const existing = (state.accommodationsByTrip[tripId] || []);
+      if (existing.some(a => a.id === acc.id)) {
+        return {}; // No change
+      }
+      return {
+        accommodationsByTrip: {
+          ...state.accommodationsByTrip,
+          [tripId]: [...existing, acc],
+        }
+      };
+    });
   },
   updateAccommodation(tripId, acc) {
     set(state => ({
@@ -105,9 +116,12 @@ export function TripAccommodations({ tripId }: { tripId: string }) {
     let ably: any = null;
     let isMounted = true;
     async function setupAbly() {
+      console.log("Subscribing to Ably channel for trip", tripId);
       ably = await getAblyClient();
       channel = ably.channels.get(`accommodations:${tripId}`);
       const handleCreated = (msg: any) => {
+        console.log("Ably event received (accommodation):", msg.data);
+        console.log("Current accommodationsRef before add:", accommodationsRef.current);
         if (!(accommodationsRef.current || []).some(a => a.id === msg.data.id)) {
           addAccommodation(tripId, msg.data);
         }
@@ -127,6 +141,7 @@ export function TripAccommodations({ tripId }: { tripId: string }) {
     return () => {
       isMounted = false;
       unsubscribes.forEach(fn => fn());
+      console.log("Unsubscribed from Ably channel for trip", tripId);
     };
   }, [tripId, addAccommodation, removeAccommodation, updateAccommodation]);
 
