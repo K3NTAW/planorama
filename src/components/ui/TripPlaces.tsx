@@ -74,6 +74,14 @@ interface PlaceForm extends Omit<Place, 'id' | 'link'> {
   googleMapsLink?: string;
 }
 
+const PLACE_TYPES = [
+  { value: "museum", label: "Museum" },
+  { value: "restaurant", label: "Restaurant" },
+  { value: "park", label: "Park" },
+  { value: "hotel", label: "Hotel" },
+  { value: "other", label: "Other" },
+];
+
 export function TripPlaces({ tripId }: { tripId: string }) {
   const [isPending, startTransition] = useTransition();
   const { placesByTrip, loadingByTrip, fetchPlaces, addPlace, updatePlace, removePlace, setPlaces } = useTripPlacesStore();
@@ -93,6 +101,8 @@ export function TripPlaces({ tripId }: { tripId: string }) {
   const [showFilesDialog, setShowFilesDialog] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const placesRef = useRef(places);
+  const [selectedType, setSelectedType] = useState("");
+  const [customType, setCustomType] = useState("");
 
   useEffect(() => { placesRef.current = places; }, [places]);
 
@@ -182,7 +192,13 @@ export function TripPlaces({ tripId }: { tripId: string }) {
   }
 
   function extractLatLngFromGoogleMapsUrl(url: string): { lat: number, lng: number } | null {
-    const match = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+    // Try !3dLAT!4dLNG first (place marker)
+    let match = url.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
+    if (match) {
+      return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+    }
+    // Fallback to @LAT,LNG (map center)
+    match = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
     if (match) {
       return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
     }
@@ -193,17 +209,21 @@ export function TripPlaces({ tripId }: { tripId: string }) {
     startTransition(async () => {
       let latitude, longitude;
       if (data.googleMapsLink) {
+        console.log("Google Maps Link:", data.googleMapsLink);
         const coords = extractLatLngFromGoogleMapsUrl(data.googleMapsLink);
+        console.log("Extracted coords:", coords);
         if (coords) {
           latitude = coords.lat;
           longitude = coords.lng;
         }
       }
+      const typeToSend = selectedType === "other" ? customType : selectedType;
       const res = await fetch(`/api/trips/${tripId}/places`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...data,
+          type: typeToSend,
           link: data.websiteLink,
           latitude,
           longitude,
@@ -226,6 +246,8 @@ export function TripPlaces({ tripId }: { tripId: string }) {
         setFileProgress(0);
         reset();
         setDialogOpen(false);
+        setSelectedType("");
+        setCustomType("");
       }
     });
   };
@@ -249,6 +271,13 @@ export function TripPlaces({ tripId }: { tripId: string }) {
       googleMapsLink: '', // You may want to prefill this if you store it
     });
     setEditErrors({});
+    if (PLACE_TYPES.some(t => t.value === place.type)) {
+      setSelectedType(place.type);
+      setCustomType("");
+    } else {
+      setSelectedType("other");
+      setCustomType(place.type || "");
+    }
     setEditDialogOpen(true);
   };
 
@@ -261,24 +290,29 @@ export function TripPlaces({ tripId }: { tripId: string }) {
     // Validate
     const errors: { name?: string; type?: string } = {};
     if (!editForm.name) errors.name = "Name is required";
-    if (!editForm.type) errors.type = "Type is required";
+    if (!selectedType) errors.type = "Type is required";
+    if (selectedType === "other" && !customType) errors.type = "Custom type is required";
     setEditErrors(errors);
     if (Object.keys(errors).length > 0) return false;
     // Extract lat/lng
     let latitude, longitude;
     if (editForm.googleMapsLink) {
+      console.log("Google Maps Link (edit):", editForm.googleMapsLink);
       const coords = extractLatLngFromGoogleMapsUrl(editForm.googleMapsLink);
+      console.log("Extracted coords (edit):", coords);
       if (coords) {
         latitude = coords.lat;
         longitude = coords.lng;
       }
     }
+    const typeToSend = selectedType === "other" ? customType : selectedType;
     // Save
     const res = await fetch(`/api/trips/${tripId}/places`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         ...editForm,
+        type: typeToSend,
         link: editForm.websiteLink,
         latitude,
         longitude,
@@ -291,6 +325,8 @@ export function TripPlaces({ tripId }: { tripId: string }) {
       setEditForm({});
       setEditErrors({});
       setEditDialogOpen(false);
+      setSelectedType("");
+      setCustomType("");
       return true;
     }
     return false;
@@ -323,7 +359,26 @@ export function TripPlaces({ tripId }: { tripId: string }) {
               {errors.name && <div className="text-red-500 text-xs mt-1">{errors.name.message}</div>}
             </div>
             <div>
-              <input {...register("type", { required: "Type is required" })} placeholder="Type (e.g. Museum, Restaurant)" className="w-full border rounded px-3 py-2" />
+              <select
+                className="w-full border rounded px-3 py-2"
+                value={selectedType}
+                onChange={e => setSelectedType(e.target.value)}
+                required
+              >
+                <option value="">Select type</option>
+                {PLACE_TYPES.map(type => (
+                  <option key={type.value} value={type.value}>{type.label}</option>
+                ))}
+              </select>
+              {selectedType === "other" && (
+                <input
+                  className="w-full border rounded px-3 py-2 mt-2"
+                  value={customType}
+                  onChange={e => setCustomType(e.target.value)}
+                  placeholder="Enter custom type"
+                  required
+                />
+              )}
               {errors.type && <div className="text-red-500 text-xs mt-1">{errors.type.message}</div>}
             </div>
             <div>
@@ -455,7 +510,26 @@ export function TripPlaces({ tripId }: { tripId: string }) {
               {editErrors.name && <div className="text-red-500 text-xs mt-1">{editErrors.name}</div>}
             </div>
             <div>
-              <input name="type" value={editForm.type || ""} onChange={handleEditChange} placeholder="Type (e.g. Museum, Restaurant)" className="w-full border rounded px-3 py-2" />
+              <select
+                className="w-full border rounded px-3 py-2"
+                value={selectedType}
+                onChange={e => setSelectedType(e.target.value)}
+                required
+              >
+                <option value="">Select type</option>
+                {PLACE_TYPES.map(type => (
+                  <option key={type.value} value={type.value}>{type.label}</option>
+                ))}
+              </select>
+              {selectedType === "other" && (
+                <input
+                  className="w-full border rounded px-3 py-2 mt-2"
+                  value={customType}
+                  onChange={e => setCustomType(e.target.value)}
+                  placeholder="Enter custom type"
+                  required
+                />
+              )}
               {editErrors.type && <div className="text-red-500 text-xs mt-1">{editErrors.type}</div>}
             </div>
             <div>

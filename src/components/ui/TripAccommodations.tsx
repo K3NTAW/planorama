@@ -59,7 +59,13 @@ export const useTripAccommodationsStore = create<TripAccommodationsState>((set, 
 }));
 
 function extractLatLngFromGoogleMapsUrl(url: string): { lat: number, lng: number } | null {
-  const match = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+  // Try !3dLAT!4dLNG first (place marker)
+  let match = url.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
+  if (match) {
+    return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+  }
+  // Fallback to @LAT,LNG (map center)
+  match = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
   if (match) {
     return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
   }
@@ -190,7 +196,9 @@ export function TripAccommodations({ tripId }: { tripId: string }) {
     // Extract lat/lng
     let latitude, longitude;
     if (editForm.googleMapsLink) {
+      console.log("Google Maps Link (edit):", editForm.googleMapsLink);
       const coords = extractLatLngFromGoogleMapsUrl(editForm.googleMapsLink);
+      console.log("Extracted coords (edit):", coords);
       if (coords) {
         latitude = coords.lat;
         longitude = coords.lng;
