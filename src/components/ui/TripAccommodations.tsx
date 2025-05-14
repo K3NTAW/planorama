@@ -76,6 +76,37 @@ export function TripAccommodations({ tripId }: { tripId: string }) {
     }
   }, [tripId, fetchAccommodations, accommodationsByTrip]);
 
+  useEffect(() => {
+    let ably: any = null;
+    let channel: any = null;
+    let unsubscribes: (() => void)[] = [];
+    let isMounted = true;
+    async function setupAbly() {
+      const res = await fetch('/api/ably-token');
+      if (!res.ok) return;
+      const tokenRequest = await res.json();
+      ably = new (require('ably')).Realtime({ token: tokenRequest });
+      channel = ably.channels.get(`accommodations:${tripId}`);
+      const handleCreated = (msg: any) => { addAccommodation(tripId, msg.data); };
+      const handleDeleted = (msg: any) => { removeAccommodation(tripId, msg.data.id); };
+      const handleUpdated = (msg: any) => { updateAccommodation(tripId, msg.data); };
+      channel.subscribe('accommodation-created', handleCreated);
+      channel.subscribe('accommodation-deleted', handleDeleted);
+      channel.subscribe('accommodation-updated', handleUpdated);
+      unsubscribes = [
+        () => channel.unsubscribe('accommodation-created', handleCreated),
+        () => channel.unsubscribe('accommodation-deleted', handleDeleted),
+        () => channel.unsubscribe('accommodation-updated', handleUpdated),
+      ];
+    }
+    setupAbly();
+    return () => {
+      isMounted = false;
+      unsubscribes.forEach(fn => fn());
+      if (ably) ably.close();
+    };
+  }, [tripId, addAccommodation, removeAccommodation, updateAccommodation]);
+
   const onSubmit = (data: Omit<Accommodation, 'id'>) => {
     startTransition(async () => {
       const res = await fetch(`/api/trips/${tripId}/accommodations`, {

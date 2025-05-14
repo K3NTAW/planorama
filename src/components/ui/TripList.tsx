@@ -7,6 +7,7 @@ import { CreateTripButton } from "@/components/ui/CreateTripButton";
 import Image from "next/image";
 import { create } from 'zustand';
 import { Button } from "@/components/ui/button";
+import Ably from 'ably';
 
 export interface Trip {
   id: string;
@@ -50,6 +51,42 @@ export function TripList({ userId }: { userId: string }) {
       fetchTrips();
     }
   }, [fetchTrips, trips.length]);
+
+  // Ably real-time subscription for trip-created
+  useEffect(() => {
+    let ably: any = null;
+    let channel: any = null;
+    let unsubscribes: (() => void)[] = [];
+    let isMounted = true;
+    async function setupAbly() {
+      const res = await fetch('/api/ably-token');
+      if (!res.ok) return;
+      const tokenRequest = await res.json();
+      ably = new Ably.Realtime({ token: tokenRequest });
+      channel = ably.channels.get('trips');
+      const handleTripCreated = (msg: any) => { addTrip(msg.data); };
+      const handleTripDeleted = (msg: any) => { removeTrip(msg.data.id); };
+      const handleTripUpdated = (msg: any) => {
+        const updatedTrip = msg.data;
+        removeTrip(updatedTrip.id);
+        addTrip(updatedTrip);
+      };
+      channel.subscribe('trip-created', handleTripCreated);
+      channel.subscribe('trip-deleted', handleTripDeleted);
+      channel.subscribe('trip-updated', handleTripUpdated);
+      unsubscribes = [
+        () => channel.unsubscribe('trip-created', handleTripCreated),
+        () => channel.unsubscribe('trip-deleted', handleTripDeleted),
+        () => channel.unsubscribe('trip-updated', handleTripUpdated),
+      ];
+    }
+    setupAbly();
+    return () => {
+      isMounted = false;
+      unsubscribes.forEach(fn => fn());
+      if (ably) ably.close();
+    };
+  }, [addTrip, removeTrip]);
 
   // Called after a trip is created
   async function handleTripCreated() {

@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import Ably from 'ably';
 
 const prisma = new PrismaClient();
+const ably = new Ably.Rest(process.env.ABLY_API_KEY!);
 
 // GET /api/trips/[tripId]/places/files?placeId=xxx
 export async function GET(req: NextRequest) {
@@ -28,6 +30,7 @@ export async function POST(req: NextRequest) {
   const file = await prisma.placeFile.create({
     data: { placeId, url, name },
   });
+  await ably.channels.get(`place-files:${placeId}`).publish('place-file-created', file);
   return NextResponse.json(file);
 }
 
@@ -38,8 +41,14 @@ export async function DELETE(req: NextRequest) {
   if (!id) {
     return NextResponse.json({ error: 'Missing file id' }, { status: 400 });
   }
+  // Fetch the file to get placeId before deleting
+  const file = await prisma.placeFile.findUnique({ where: { id } });
+  if (!file) {
+    return NextResponse.json({ error: 'File not found' }, { status: 404 });
+  }
   await prisma.placeFile.delete({
     where: { id },
   });
+  await ably.channels.get(`place-files:${file.placeId}`).publish('place-file-deleted', { id });
   return NextResponse.json({ success: true });
 } 

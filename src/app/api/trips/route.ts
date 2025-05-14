@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { auth } from '@clerk/nextjs/server';
 import clerkClient from '@clerk/clerk-sdk-node';
+import Ably from 'ably';
 
 const prisma = new PrismaClient();
+const ably = new Ably.Rest(process.env.ABLY_API_KEY!);
 
 export async function POST(req: NextRequest) {
   const { userId } = await auth();
@@ -40,6 +42,8 @@ export async function POST(req: NextRequest) {
       bannerUrl,
     },
   });
+  // Publish to Ably for real-time updates
+  await ably.channels.get('trips').publish('trip-created', trip);
   return NextResponse.json(trip, { status: 201 });
 }
 

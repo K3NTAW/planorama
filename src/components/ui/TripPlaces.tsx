@@ -92,6 +92,37 @@ export function TripPlaces({ tripId }: { tripId: string }) {
     }
   }, [tripId, fetchPlaces, placesByTrip]);
 
+  useEffect(() => {
+    let ably: any = null;
+    let channel: any = null;
+    let unsubscribes: (() => void)[] = [];
+    let isMounted = true;
+    async function setupAbly() {
+      const res = await fetch('/api/ably-token');
+      if (!res.ok) return;
+      const tokenRequest = await res.json();
+      ably = new (require('ably')).Realtime({ token: tokenRequest });
+      channel = ably.channels.get(`places:${tripId}`);
+      const handlePlaceCreated = (msg: any) => { addPlace(tripId, msg.data); };
+      const handlePlaceDeleted = (msg: any) => { removePlace(tripId, msg.data.id); };
+      const handlePlaceUpdated = (msg: any) => { updatePlace(tripId, msg.data); };
+      channel.subscribe('place-created', handlePlaceCreated);
+      channel.subscribe('place-deleted', handlePlaceDeleted);
+      channel.subscribe('place-updated', handlePlaceUpdated);
+      unsubscribes = [
+        () => channel.unsubscribe('place-created', handlePlaceCreated),
+        () => channel.unsubscribe('place-deleted', handlePlaceDeleted),
+        () => channel.unsubscribe('place-updated', handlePlaceUpdated),
+      ];
+    }
+    setupAbly();
+    return () => {
+      isMounted = false;
+      unsubscribes.forEach(fn => fn());
+      if (ably) ably.close();
+    };
+  }, [tripId, addPlace, removePlace, updatePlace]);
+
   async function handleFileUpload(file: File) {
     if (!file) return;
     setFileUploading(true);

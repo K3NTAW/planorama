@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { auth } from '@clerk/nextjs/server';
+import Ably from 'ably';
 
 const prisma = new PrismaClient();
+const ably = new Ably.Rest(process.env.ABLY_API_KEY!);
 
 export async function GET(req: NextRequest, { params }: { params: { tripId: string } }) {
   const { userId } = await auth();
@@ -34,6 +36,7 @@ export async function POST(req: NextRequest, { params }: { params: { tripId: str
       date: date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? new Date(date + 'T00:00:00.000Z') : undefined,
     },
   });
+  await ably.channels.get(`places:${tripId}`).publish('place-created', place);
   return NextResponse.json(place, { status: 201 });
 }
 
@@ -49,6 +52,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { tripId: s
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
   await prisma.place.delete({ where: { id } });
+  await ably.channels.get(`places:${tripId}`).publish('place-deleted', { id });
   return new NextResponse(null, { status: 204 });
 }
 
@@ -69,5 +73,6 @@ export async function PUT(req: NextRequest, { params }: { params: { tripId: stri
     where: { id },
     data: { name, type, address, link, notes, date: date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? new Date(date + 'T00:00:00.000Z') : undefined },
   });
+  await ably.channels.get(`places:${tripId}`).publish('place-updated', updated);
   return NextResponse.json(updated);
 } 

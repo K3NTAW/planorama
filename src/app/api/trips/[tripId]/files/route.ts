@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import Ably from 'ably';
 
 const prisma = new PrismaClient();
+const ably = new Ably.Rest(process.env.ABLY_API_KEY!);
 
 function getTripIdFromUrl(url: string): string | null {
   const pathParts = new URL(url, 'http://localhost').pathname.split('/');
@@ -39,6 +41,7 @@ export async function POST(req: NextRequest) {
   const file = await prisma.tripFile.create({
     data: { tripId, url: fileUrl, name },
   });
+  await ably.channels.get(`files:${tripId}`).publish('file-created', file);
   return NextResponse.json(file);
 }
 
@@ -55,5 +58,6 @@ export async function DELETE(req: NextRequest) {
   await prisma.tripFile.delete({
     where: { id },
   });
+  await ably.channels.get(`files:${tripId}`).publish('file-deleted', { id });
   return NextResponse.json({ success: true });
 } 

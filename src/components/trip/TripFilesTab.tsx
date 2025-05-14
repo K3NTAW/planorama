@@ -127,6 +127,36 @@ export function TripFilesTab({ tripId }: TripFilesTabProps) {
     }
   }, [tripId, fetchAll, filesByTrip]);
 
+  useEffect(() => {
+    let ably: any = null;
+    let channels: any[] = [];
+    let unsubscribes: (() => void)[] = [];
+    let isMounted = true;
+    async function setupAbly() {
+      if (!places || places.length === 0) return;
+      const res = await fetch('/api/ably-token');
+      if (!res.ok) return;
+      const tokenRequest = await res.json();
+      ably = new (require('ably')).Realtime({ token: tokenRequest });
+      channels = places.map((place: any) => ably.channels.get(`place-files:${place.id}`));
+      channels.forEach((channel, idx) => {
+        const placeId = places[idx].id;
+        const handleFileCreated = (msg: any) => { addPlaceFile(tripId, { ...msg.data, placeId, placeName: places[idx].name }); };
+        const handleFileDeleted = (msg: any) => { removePlaceFile(tripId, msg.data.id); };
+        channel.subscribe('place-file-created', handleFileCreated);
+        channel.subscribe('place-file-deleted', handleFileDeleted);
+        unsubscribes.push(() => channel.unsubscribe('place-file-created', handleFileCreated));
+        unsubscribes.push(() => channel.unsubscribe('place-file-deleted', handleFileDeleted));
+      });
+    }
+    setupAbly();
+    return () => {
+      isMounted = false;
+      unsubscribes.forEach(fn => fn());
+      if (ably) ably.close();
+    };
+  }, [tripId, places, addPlaceFile, removePlaceFile]);
+
   // After upload, refetch all files
   async function refetchAllFiles() {
     await fetchAll(tripId);
