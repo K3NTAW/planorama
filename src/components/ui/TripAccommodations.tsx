@@ -14,6 +14,8 @@ interface Accommodation {
   checkIn: string;
   checkOut: string;
   link?: string;
+  websiteLink?: string;
+  googleMapsLink?: string;
 }
 
 interface TripAccommodationsState {
@@ -187,8 +189,8 @@ export function TripAccommodations({ tripId }: { tripId: string }) {
     setEditingId(acc.id);
     setEditForm({
       ...acc,
-      websiteLink: '', // You may want to prefill this if you store it
-      googleMapsLink: '', // You may want to prefill this if you store it
+      websiteLink: acc.websiteLink || '',
+      googleMapsLink: acc.googleMapsLink || '',
     });
     setEditErrors({});
     setEditDialogOpen(true);

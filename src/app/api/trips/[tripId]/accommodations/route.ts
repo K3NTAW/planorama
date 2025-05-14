@@ -31,7 +31,7 @@ export async function POST(req: NextRequest, { params }: { params: { tripId: str
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const tripId = params.tripId;
-  const { name, address, checkIn, checkOut, link, latitude, longitude } = await req.json();
+  const { name, address, checkIn, checkOut, link, latitude, longitude, websiteLink, googleMapsLink } = await req.json();
   if (!name || !address || !checkIn || !checkOut) {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
   }
@@ -45,6 +45,8 @@ export async function POST(req: NextRequest, { params }: { params: { tripId: str
       link,
       latitude,
       longitude,
+      websiteLink,
+      googleMapsLink,
       userId: userId,
     },
     select: {
@@ -56,6 +58,8 @@ export async function POST(req: NextRequest, { params }: { params: { tripId: str
       link: true,
       latitude: true,
       longitude: true,
+      websiteLink: true,
+      googleMapsLink: true,
       user: true,
     },
   });
@@ -84,7 +88,7 @@ export async function PUT(req: NextRequest, { params }: { params: { tripId: stri
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const tripId = params.tripId;
-  const { id, name, address, checkIn, checkOut, link, latitude, longitude } = await req.json();
+  const { id, name, address, checkIn, checkOut, link, latitude, longitude, websiteLink, googleMapsLink } = await req.json();
   if (!id || !name || !address || !checkIn || !checkOut) {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
   }
@@ -95,7 +99,7 @@ export async function PUT(req: NextRequest, { params }: { params: { tripId: stri
   }
   const updated = await prisma.accommodation.update({
     where: { id },
-    data: { name, address, checkIn: new Date(checkIn), checkOut: new Date(checkOut), link, latitude, longitude },
+    data: { name, address, checkIn: new Date(checkIn), checkOut: new Date(checkOut), link, latitude, longitude, websiteLink, googleMapsLink },
     select: {
       id: true,
       name: true,
@@ -105,6 +109,8 @@ export async function PUT(req: NextRequest, { params }: { params: { tripId: stri
       link: true,
       latitude: true,
       longitude: true,
+      websiteLink: true,
+      googleMapsLink: true,
       user: true,
     },
   });

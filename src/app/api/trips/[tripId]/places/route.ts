@@ -21,7 +21,7 @@ export async function POST(req: NextRequest, { params }: { params: { tripId: str
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const tripId = params.tripId;
-  const { name, type, address, link, notes, date, latitude, longitude } = await req.json();
+  const { name, type, address, link, notes, date, latitude, longitude, websiteLink, googleMapsLink } = await req.json();
   if (!name || !type) {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
   }
@@ -36,6 +36,8 @@ export async function POST(req: NextRequest, { params }: { params: { tripId: str
       date: date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? new Date(date + 'T00:00:00.000Z') : undefined,
       latitude,
       longitude,
+      websiteLink,
+      googleMapsLink,
     },
   });
   await ably.channels.get(`places:${tripId}`).publish('place-created', place);
@@ -62,7 +64,7 @@ export async function PUT(req: NextRequest, { params }: { params: { tripId: stri
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const tripId = params.tripId;
-  const { id, name, type, address, link, notes, date, latitude, longitude } = await req.json();
+  const { id, name, type, address, link, notes, date, latitude, longitude, websiteLink, googleMapsLink } = await req.json();
   if (!id || !name || !type) {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
   }
@@ -82,6 +84,8 @@ export async function PUT(req: NextRequest, { params }: { params: { tripId: stri
       date: date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? new Date(date + 'T00:00:00.000Z') : undefined,
       latitude,
       longitude,
+      websiteLink,
+      googleMapsLink,
     },
   });
   await ably.channels.get(`places:${tripId}`).publish('place-updated', updated);

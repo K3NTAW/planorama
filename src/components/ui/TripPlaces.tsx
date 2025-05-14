@@ -20,6 +20,7 @@ interface Place {
   link?: string;
   notes?: string;
   date?: string;
+  googleMapsLink?: string;
 }
 
 interface TripPlacesState {
@@ -268,7 +269,7 @@ export function TripPlaces({ tripId }: { tripId: string }) {
     setEditForm({
       ...place,
       websiteLink: place.link || '',
-      googleMapsLink: '', // You may want to prefill this if you store it
+      googleMapsLink: place.googleMapsLink || '',
     });
     setEditErrors({});
     if (PLACE_TYPES.some(t => t.value === place.type)) {
