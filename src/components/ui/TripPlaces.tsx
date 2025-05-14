@@ -11,6 +11,7 @@ import { Dialog as Modal, DialogContent as ModalContent, DialogHeader as ModalHe
 import { TripFilesTab } from "@/components/trip/TripFilesTab";
 import { create } from 'zustand';
 import { getAblyClient } from '@/lib/ablyClient';
+import { useToast } from "@/components/ui/use-toast";
 
 interface Place {
   id: string;
@@ -104,6 +105,7 @@ export function TripPlaces({ tripId }: { tripId: string }) {
   const placesRef = useRef(places);
   const [selectedType, setSelectedType] = useState("");
   const [customType, setCustomType] = useState("");
+  const { toast } = useToast();
 
   useEffect(() => { placesRef.current = places; }, [places]);
 
@@ -249,6 +251,10 @@ export function TripPlaces({ tripId }: { tripId: string }) {
         setDialogOpen(false);
         setSelectedType("");
         setCustomType("");
+        toast({ title: "Place created", description: "The place was added successfully." });
+      } else {
+        const data = await res.json().catch(() => ({}));
+        toast({ title: "Failed to create place", description: data.error || "Something went wrong.", variant: "destructive" });
       }
     });
   };
@@ -261,6 +267,10 @@ export function TripPlaces({ tripId }: { tripId: string }) {
     });
     if (res.ok) {
       removePlace(tripId, id);
+      toast({ title: "Place deleted", description: "The place was deleted successfully." });
+    } else {
+      const data = await res.json().catch(() => ({}));
+      toast({ title: "Failed to delete place", description: data.error || "Something went wrong.", variant: "destructive" });
     }
   };
 
@@ -328,7 +338,11 @@ export function TripPlaces({ tripId }: { tripId: string }) {
       setEditDialogOpen(false);
       setSelectedType("");
       setCustomType("");
+      toast({ title: "Place updated", description: "The place was updated successfully." });
       return true;
+    } else {
+      const data = await res.json().catch(() => ({}));
+      toast({ title: "Failed to update place", description: data.error || "Something went wrong.", variant: "destructive" });
     }
     return false;
   };

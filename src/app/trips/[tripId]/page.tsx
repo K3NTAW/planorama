@@ -13,6 +13,7 @@ import { TripFilesTab } from '@/components/trip/TripFilesTab';
 import { Card } from '@/components/ui/card';
 import { TripMap } from '@/components/trip/TripMap';
 import { TripMapTab } from '@/components/trip/TripMapTab';
+import TripHeaderClient from '@/components/trip/TripHeaderClient';
 
 const prisma = new PrismaClient();
 
@@ -60,27 +61,8 @@ export default async function TripDetailsPage(props: any) {
     <div className="max-w-3xl w-full mx-auto px-2 sm:px-4 md:px-6 py-6 overflow-x-hidden">
       {/* Accept invite dialog on page load */}
       <AcceptInviteDialog tripId={tripId} />
-      {/* Banner image */}
-      {trip.bannerUrl && (
-        <Image
-          src={trip.bannerUrl}
-          alt={trip.name}
-          width={800}
-          height={224}
-          className="w-full max-w-full h-56 object-cover rounded-md mb-6 border border-border"
-          priority
-        />
-      )}
-      <div className="mb-6 flex flex-col sm:flex-row items-center justify-between w-full max-w-full gap-4">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">{trip.name}</h1>
-          <div className="text-lg text-gray-600 mb-1">Destination: {trip.destination}</div>
-          <div className="text-gray-500 text-sm mb-2">
-            {trip.startDate ? format(new Date(trip.startDate), 'yyyy-MM-dd') : ''}
-            {trip.endDate ? ` - ${format(new Date(trip.endDate), 'yyyy-MM-dd')}` : ''}
-          </div>
-        </div>
-      </div>
+      {/* Banner and trip info (client-side for real-time/optimistic updates) */}
+      <TripHeaderClient initialTrip={trip} tripId={tripId} />
       <Tabs defaultValue="places" className="w-full max-w-full">
         <TabsList className="mb-4 w-full max-w-full overflow-x-auto">
           <TabsTrigger value="places">Places</TabsTrigger>

@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { Dialog as Modal, DialogContent as ModalContent, DialogHeader as ModalHeader, DialogTitle as ModalTitle } from "@/components/ui/dialog";
 import { create } from 'zustand';
 import { getAblyClient } from '@/lib/ablyClient';
+import { useToast } from "@/components/ui/use-toast";
 
 interface TripFilesTabProps {
   tripId: string;
@@ -121,6 +122,7 @@ export function TripFilesTab({ tripId }: TripFilesTabProps) {
   const loading = loadingByTrip[tripId] ?? true;
   const [fileModal, setFileModal] = useState<{ url: string; name: string } | null>(null);
   const [selectedPlaceId, setSelectedPlaceId] = useState<string>("");
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!filesByTrip[tripId]) {
@@ -212,14 +214,17 @@ export function TripFilesTab({ tripId }: TripFilesTabProps) {
           });
         }
         setFileModal(null);
+        toast({ title: "File uploaded", description: "The file was uploaded successfully." });
       } else {
         setUploadedFiles(prev => prev.filter(f => f.id !== tempId));
+        toast({ title: "Failed to upload file", description: "No secure URL returned.", variant: "destructive" });
       }
       await refetchAllFiles();
     } catch (error) {
       console.error("Upload failed:", error);
       clearInterval(progressInterval);
       setUploadedFiles(prev => prev.filter(f => f.id !== tempId));
+      toast({ title: "Failed to upload file", description: "Something went wrong.", variant: "destructive" });
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -277,6 +282,9 @@ export function TripFilesTab({ tripId }: TripFilesTabProps) {
     if (res.ok) {
       removeTripFile(tripId, fileId);
       await refetchAllFiles();
+      toast({ title: "File deleted", description: "The file was deleted successfully." });
+    } else {
+      toast({ title: "Failed to delete file", description: "Something went wrong.", variant: "destructive" });
     }
   }
 
@@ -289,6 +297,9 @@ export function TripFilesTab({ tripId }: TripFilesTabProps) {
     if (res.ok) {
       removePlaceFile(tripId, fileId);
       await refetchAllFiles();
+      toast({ title: "File deleted", description: "The file was deleted successfully." });
+    } else {
+      toast({ title: "Failed to delete file", description: "Something went wrong.", variant: "destructive" });
     }
   }
 

@@ -15,7 +15,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { uploadToCloudinary } from "@/lib/cloudinary";
-import { UploadCloud, Loader, CheckCircle } from "lucide-react";
+import { UploadCloud, Loader, CheckCircle, Trash2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 
@@ -27,117 +27,133 @@ interface CreateTripButtonProps {
 export function CreateTripButton({ onTripCreated }: CreateTripButtonProps) {
   const router = useRouter();
   const { toast } = useToast();
+  const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [bannerPreview, setBannerPreview] = useState<string | null>(null);
   const [bannerUploading, setBannerUploading] = useState(false);
   const [bannerProgress, setBannerProgress] = useState(0);
-  const [bannerUrl, setBannerUrl] = useState<string>("");
   const [isBannerDragging, setIsBannerDragging] = useState(false);
-  const bannerInputRef = useRef<HTMLInputElement>(null);
-  const [open, setOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  async function handleBannerUpload(file: File) {
-    if (!file) return;
-    setBannerUploading(true);
-    setBannerProgress(0);
-    setBannerFile(file);
-    setBannerPreview(URL.createObjectURL(file));
-    // Simulate progress
-    const progressInterval = setInterval(() => {
-      setBannerProgress((prev) => Math.min(prev + Math.random() * 20, 95));
-    }, 300);
-    try {
-      const result = await uploadToCloudinary(file, "trip-banners");
-      clearInterval(progressInterval);
-      if (result?.secure_url) {
-        setBannerUrl(result.secure_url);
-        setBannerProgress(100);
-      } else {
-        setBannerUrl("");
-        setBannerProgress(0);
-      }
-    } catch (e) {
-      clearInterval(progressInterval);
-      setBannerUrl("");
-      setBannerProgress(0);
-    } finally {
-      setBannerUploading(false);
-    }
-  }
-
-  function handleBannerFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) handleBannerUpload(file);
-  }
+    if (!file) return;
+    setBannerFile(file);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setBannerPreview(e.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
 
-  function handleBannerDragOver(e: React.DragEvent) {
+  const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     setIsBannerDragging(true);
-  }
-  function handleBannerDragLeave() {
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
     setIsBannerDragging(false);
-  }
-  function handleBannerDrop(e: React.DragEvent) {
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsBannerDragging(false);
     const file = e.dataTransfer.files?.[0];
-    if (file) handleBannerUpload(file);
-  }
+    if (!file) return;
+    setBannerFile(file);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setBannerPreview(e.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveBanner = () => {
+    setBannerFile(null);
+    setBannerPreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
-
     try {
       const formData = new FormData(e.currentTarget);
-      const name = formData.get("name") as string;
-      const destination = formData.get("destination") as string;
-      const startDate = formData.get("startDate") as string;
-      const endDate = formData.get("endDate") as string;
-      const description = formData.get("description") as string;
-      let bannerUrlToSend = bannerUrl;
+      let bannerUrl = null;
 
-      const response = await fetch("/api/trips", {
+      if (bannerFile) {
+        setBannerUploading(true);
+        try {
+          // Simulate progress
+          const progressInterval = setInterval(() => {
+            setBannerProgress((prev) => Math.min(prev + Math.random() * 20, 95));
+          }, 300);
+
+          const result = await uploadToCloudinary(bannerFile, "trip-banners");
+          clearInterval(progressInterval);
+          
+          if (result?.secure_url) {
+            bannerUrl = result.secure_url;
+            setBannerProgress(100);
+          } else {
+            toast({
+              title: "Failed to upload banner",
+              description: "There was an error uploading your banner image. Please try again.",
+              variant: "destructive",
+            });
+            return;
+          }
+          setBannerUploading(false);
+        } catch (error) {
+          setBannerUploading(false);
+          toast({
+            title: "Failed to upload banner",
+            description: "There was an error uploading your banner image. Please try again.",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+
+      const res = await fetch("/api/trips", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name,
-          destination,
-          startDate,
-          endDate,
-          description,
-          bannerUrl: bannerUrlToSend,
+          name: formData.get("name"),
+          destination: formData.get("destination"),
+          startDate: formData.get("startDate"),
+          endDate: formData.get("endDate"),
+          bannerUrl,
         }),
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to create trip");
+      if (res.ok) {
+        const trip = await res.json();
+        setOpen(false);
+        toast({
+          title: "Trip created",
+          description: "Your trip was created successfully.",
+        });
+        if (onTripCreated) {
+          onTripCreated();
+        }
+        router.push(`/trips/${trip.id}`);
+      } else {
+        const data = await res.json();
+        toast({
+          title: "Failed to create trip",
+          description: data.error || "Something went wrong. Please try again.",
+          variant: "destructive",
+        });
       }
-
-      toast({
-        title: "Success",
-        description: "Your trip has been created.",
-      });
-
-      // Call the callback if provided (for real-time update)
-      if (onTripCreated) onTripCreated();
-
-      // Reset form and state
-      e.currentTarget.reset();
-      setBannerFile(null);
-      setBannerPreview(null);
-      setOpen(false);
-
-      // Navigate to dashboard (optional, comment out for real-time update)
-      // router.push("/dashboard");
-      // router.refresh();
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Something went wrong. Please try again.",
+        title: "Failed to create trip",
+        description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -146,28 +162,15 @@ export function CreateTripButton({ onTripCreated }: CreateTripButtonProps) {
   };
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(isOpen) => {
-        setOpen(isOpen);
-        if (!isOpen) {
-          setBannerFile(null);
-          setBannerPreview(null);
-          setBannerUploading(false);
-          setBannerProgress(0);
-          setBannerUrl("");
-          setIsBannerDragging(false);
-        }
-      }}
-    >
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button onClick={() => setOpen(true)}>Create New Trip</Button>
+        <Button>Create Trip</Button>
       </DialogTrigger>
-      <DialogContent className="bg-white dark:bg-card dark:text-white border border-gray-200 dark:border-gray-700">
-        <DialogHeader className="dark:text-white">
-          <DialogTitle>Create a New Trip</DialogTitle>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Create New Trip</DialogTitle>
           <DialogDescription>
-            Add the details for your new trip. You can add more information later.
+            Fill in the details to create a new trip.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={onSubmit} className="space-y-6">
@@ -216,73 +219,61 @@ export function CreateTripButton({ onTripCreated }: CreateTripButtonProps) {
             </div>
           </div>
           <div className="space-y-2">
-            <div className="grid w-full items-center gap-1.5">
-              <Label>Description</Label>
-              <Input
-                id="description"
-                name="description"
-                placeholder="Enter trip description"
-                required
+            <Label>Banner Image (optional)</Label>
+            <div
+              className={cn(
+                "border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors",
+                isBannerDragging ? "border-blue-500 bg-blue-50" : "border-gray-300 hover:border-gray-400",
+                bannerPreview ? "p-0" : ""
+              )}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                accept="image/*"
+                className="hidden"
               />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <div className="grid w-full items-center gap-1.5">
-              <Label>Banner Image</Label>
-              <div
-                className={cn(
-                  "border-2 border-dashed rounded-lg p-4 transition-all duration-200 mb-2",
-                  isBannerDragging
-                    ? "border-primary bg-primary/5"
-                    : "border-border hover:border-primary/50"
-                )}
-                onDragOver={handleBannerDragOver}
-                onDragLeave={handleBannerDragLeave}
-                onDrop={handleBannerDrop}
-                onClick={() => bannerInputRef.current?.click()}
-                style={{ cursor: bannerUploading ? "not-allowed" : "pointer" }}
-              >
-                <div className="flex flex-col items-center justify-center gap-2">
-                  <UploadCloud className="h-8 w-8 text-primary mb-2" />
-                  <span className="text-sm text-muted-foreground">
-                    {isBannerDragging
-                      ? "Drop image here"
-                      : "Drag & drop or click to select a banner image"}
-                  </span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    ref={bannerInputRef}
-                    onChange={handleBannerFileChange}
-                    className="hidden"
-                    disabled={bannerUploading}
-                  />
+              {bannerUploading ? (
+                <div className="space-y-2">
+                  <Loader className="animate-spin mx-auto" />
+                  <div className="text-sm text-gray-500">Uploading...</div>
+                  <Progress value={bannerProgress} className="w-full" />
                 </div>
-              </div>
-              {bannerPreview && (
-                <div className="mt-2 relative">
+              ) : bannerPreview ? (
+                <div className="relative">
                   <img
                     src={bannerPreview}
-                    alt="Banner preview"
-                    className="max-h-40 rounded-md object-cover border"
+                    alt="Banner Preview"
+                    className="w-full h-32 object-cover rounded-lg"
                   />
-                  {bannerUploading && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 rounded-md">
-                      <Loader className="h-8 w-8 text-white animate-spin mb-2" />
-                      <Progress value={bannerProgress} className="w-2/3" />
-                    </div>
-                  )}
-                  {!bannerUploading && bannerProgress === 100 && (
-                    <div className="absolute top-2 right-2 bg-white rounded-full p-1 shadow">
-                      <CheckCircle className="h-6 w-6 text-green-500" />
-                    </div>
-                  )}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemoveBanner();
+                    }}
+                    className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <UploadCloud className="mx-auto h-8 w-8 text-gray-400" />
+                  <div className="text-sm text-gray-500">
+                    Drag and drop an image, or click to select
+                  </div>
                 </div>
               )}
             </div>
           </div>
           <DialogFooter>
-            <Button type="submit" disabled={isLoading}>
+            <Button type="submit" disabled={isLoading || bannerUploading}>
               {isLoading ? "Creating..." : "Create Trip"}
             </Button>
           </DialogFooter>

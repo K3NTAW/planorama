@@ -6,6 +6,7 @@ import { useTheme } from "next-themes";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { create } from 'zustand';
 import { getAblyClient } from '@/lib/ablyClient';
+import { useToast } from "@/components/ui/use-toast";
 
 interface Accommodation {
   id: string;
@@ -105,6 +106,7 @@ export function TripAccommodations({ tripId }: { tripId: string }) {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const accommodationsRef = useRef(accommodations);
   useEffect(() => { accommodationsRef.current = accommodations; }, [accommodations]);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!accommodationsByTrip[tripId]) {
@@ -170,6 +172,10 @@ export function TripAccommodations({ tripId }: { tripId: string }) {
       if (res.ok) {
         reset();
         setDialogOpen(false);
+        toast({ title: "Accommodation created", description: "The accommodation was added successfully." });
+      } else {
+        const data = await res.json().catch(() => ({}));
+        toast({ title: "Failed to create accommodation", description: data.error || "Something went wrong.", variant: "destructive" });
       }
     });
   };
@@ -182,6 +188,10 @@ export function TripAccommodations({ tripId }: { tripId: string }) {
     });
     if (res.ok) {
       removeAccommodation(tripId, id);
+      toast({ title: "Accommodation deleted", description: "The accommodation was deleted successfully." });
+    } else {
+      const data = await res.json().catch(() => ({}));
+      toast({ title: "Failed to delete accommodation", description: data.error || "Something went wrong.", variant: "destructive" });
     }
   };
 
@@ -213,9 +223,7 @@ export function TripAccommodations({ tripId }: { tripId: string }) {
     // Extract lat/lng
     let latitude, longitude;
     if (editForm.googleMapsLink) {
-      console.log("Google Maps Link (edit):", editForm.googleMapsLink);
       const coords = extractLatLngFromGoogleMapsUrl(editForm.googleMapsLink);
-      console.log("Extracted coords (edit):", coords);
       if (coords) {
         latitude = coords.lat;
         longitude = coords.lng;
@@ -239,7 +247,11 @@ export function TripAccommodations({ tripId }: { tripId: string }) {
       setEditForm({});
       setEditErrors({});
       setEditDialogOpen(false);
+      toast({ title: "Accommodation updated", description: "The accommodation was updated successfully." });
       return true;
+    } else {
+      const data = await res.json().catch(() => ({}));
+      toast({ title: "Failed to update accommodation", description: data.error || "Something went wrong.", variant: "destructive" });
     }
     return false;
   };
