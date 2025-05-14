@@ -109,7 +109,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="max-w-2xl w-full mx-auto px-4 sm:px-6 md:px-8 pt-8 pb-[env(safe-area-inset-bottom)] md:pb-6 overflow-x-hidden">
+    <div className="max-w-2xl w-full mx-auto px-4 sm:px-6 md:px-8 pt-8 pb-24 md:pb-6 pb-[env(safe-area-inset-bottom)] overflow-x-hidden">
       <Tabs defaultValue="profile" className="w-full">
         <TabsList className="mb-4 w-full max-w-full overflow-x-auto">
           <TabsTrigger value="profile">Profile</TabsTrigger>

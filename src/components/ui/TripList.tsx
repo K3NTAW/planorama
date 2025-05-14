@@ -62,7 +62,9 @@ export function TripList({ userId }: { userId: string }) {
       const res = await fetch('/api/ably-token');
       if (!res.ok) return;
       const tokenRequest = await res.json();
-      ably = new Ably.Realtime({ token: tokenRequest });
+      console.log('Ably tokenRequest:', tokenRequest);
+      // Try using authUrl instead of token for Ably initialization
+      ably = new Ably.Realtime({ authUrl: '/api/ably-token' });
       channel = ably.channels.get('trips');
       const handleTripCreated = (msg: any) => { addTrip(msg.data); };
       const handleTripDeleted = (msg: any) => { removeTrip(msg.data.id); };

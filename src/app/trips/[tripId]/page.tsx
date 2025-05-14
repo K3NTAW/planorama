@@ -11,6 +11,7 @@ import { AcceptInviteDialog } from '@/components/ui/AcceptInviteDialog';
 import { TripSettingsTab } from '@/components/trip/TripSettingsTab';
 import { TripFilesTab } from '@/components/trip/TripFilesTab';
 import { Card } from '@/components/ui/card';
+import { TripMap } from '@/components/trip/TripMap';
 
 const prisma = new PrismaClient();
 
@@ -22,6 +23,37 @@ export default async function TripDetailsPage(props: any) {
   });
 
   if (!trip) return notFound();
+
+  // Fetch places and accommodations with lat/lng
+  const places = await prisma.place.findMany({
+    where: { tripId },
+    select: { id: true, name: true, latitude: true, longitude: true, notes: true, type: true, files: { select: { url: true } } },
+  });
+  const accommodations = await prisma.accommodation.findMany({
+    where: { tripId },
+    select: { id: true, name: true, latitude: true, longitude: true, address: true },
+  });
+
+  // Prepare locations for TripMap
+  const mapLocations = [
+    ...places.filter((p: any) => p.latitude && p.longitude).map((p: any) => ({
+      id: p.id,
+      name: p.name,
+      latitude: p.latitude!,
+      longitude: p.longitude!,
+      notes: p.notes,
+      imageUrl: p.files?.[0]?.url,
+      type: p.type || 'place',
+    })),
+    ...accommodations.filter((a: any) => a.latitude && a.longitude).map((a: any) => ({
+      id: a.id,
+      name: a.name,
+      latitude: a.latitude!,
+      longitude: a.longitude!,
+      notes: a.address,
+      type: 'accommodation',
+    })),
+  ];
 
   return (
     <div className="max-w-3xl w-full mx-auto px-2 sm:px-4 md:px-6 py-6 overflow-x-hidden">
@@ -53,6 +85,7 @@ export default async function TripDetailsPage(props: any) {
           <TabsTrigger value="places">Places</TabsTrigger>
           <TabsTrigger value="accommodation">Accommodation</TabsTrigger>
           <TabsTrigger value="files">Files</TabsTrigger>
+          <TabsTrigger value="map">Map</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
         <TabsContent value="places">
@@ -63,6 +96,11 @@ export default async function TripDetailsPage(props: any) {
         </TabsContent>
         <TabsContent value="files">
           <TripFilesTab tripId={tripId} />
+        </TabsContent>
+        <TabsContent value="map">
+          <Card className="w-full max-w-full p-2 md:p-4">
+            <TripMap locations={mapLocations} />
+          </Card>
         </TabsContent>
         <TabsContent value="settings">
           <TripSettingsTab tripId={tripId} />

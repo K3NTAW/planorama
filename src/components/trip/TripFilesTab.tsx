@@ -15,6 +15,7 @@ import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { Dialog as Modal, DialogContent as ModalContent, DialogHeader as ModalHeader, DialogTitle as ModalTitle } from "@/components/ui/dialog";
 import { create } from 'zustand';
+import { getAblyClient } from '@/lib/ablyClient';
 
 interface TripFilesTabProps {
   tripId: string;
@@ -128,20 +129,21 @@ export function TripFilesTab({ tripId }: TripFilesTabProps) {
   }, [tripId, fetchAll, filesByTrip]);
 
   useEffect(() => {
-    let ably: any = null;
     let channels: any[] = [];
     let unsubscribes: (() => void)[] = [];
+    let ably: any = null;
     let isMounted = true;
     async function setupAbly() {
       if (!places || places.length === 0) return;
-      const res = await fetch('/api/ably-token');
-      if (!res.ok) return;
-      const tokenRequest = await res.json();
-      ably = new (require('ably')).Realtime({ token: tokenRequest });
+      ably = await getAblyClient();
       channels = places.map((place: any) => ably.channels.get(`place-files:${place.id}`));
       channels.forEach((channel, idx) => {
         const placeId = places[idx].id;
-        const handleFileCreated = (msg: any) => { addPlaceFile(tripId, { ...msg.data, placeId, placeName: places[idx].name }); };
+        const handleFileCreated = (msg: any) => {
+          if (!(placeFilesByTrip[tripId] || []).some(f => f.id === msg.data.id)) {
+            addPlaceFile(tripId, { ...msg.data, placeId, placeName: places[idx].name });
+          }
+        };
         const handleFileDeleted = (msg: any) => { removePlaceFile(tripId, msg.data.id); };
         channel.subscribe('place-file-created', handleFileCreated);
         channel.subscribe('place-file-deleted', handleFileDeleted);
@@ -153,9 +155,9 @@ export function TripFilesTab({ tripId }: TripFilesTabProps) {
     return () => {
       isMounted = false;
       unsubscribes.forEach(fn => fn());
-      if (ably) ably.close();
+      // Do not close the singleton ably client here, just unsubscribe
     };
-  }, [tripId, places, addPlaceFile, removePlaceFile]);
+  }, [tripId, places, addPlaceFile, removePlaceFile, placeFilesByTrip]);
 
   // After upload, refetch all files
   async function refetchAllFiles() {
@@ -202,20 +204,12 @@ export function TripFilesTab({ tripId }: TripFilesTabProps) {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ placeId: selectedPlaceId, url: result.secure_url, name: file.name }),
           });
-          if (res.ok) {
-            const pf = await res.json();
-            addPlaceFile(tripId, { ...pf, placeId: selectedPlaceId, placeName: places.find(p => p.id === selectedPlaceId)?.name || "" });
-          }
         } else {
           const res = await fetch(`/api/trips/${tripId}/files`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ url: result.secure_url, name: file.name }),
           });
-          if (res.ok) {
-            const tf = await res.json();
-            addTripFile(tripId, tf);
-          }
         }
         setFileModal(null);
       } else {

@@ -10,6 +10,7 @@ import { uploadToCloudinary } from "@/lib/cloudinary";
 import { Dialog as Modal, DialogContent as ModalContent, DialogHeader as ModalHeader, DialogTitle as ModalTitle } from "@/components/ui/dialog";
 import { TripFilesTab } from "@/components/trip/TripFilesTab";
 import { create } from 'zustand';
+import { getAblyClient } from '@/lib/ablyClient';
 
 interface Place {
   id: string;
@@ -67,14 +68,20 @@ export const useTripPlacesStore = create<TripPlacesState>((set, get) => ({
   },
 }));
 
+// Extend the Place type for the form
+interface PlaceForm extends Omit<Place, 'id' | 'link'> {
+  websiteLink?: string;
+  googleMapsLink?: string;
+}
+
 export function TripPlaces({ tripId }: { tripId: string }) {
   const [isPending, startTransition] = useTransition();
   const { placesByTrip, loadingByTrip, fetchPlaces, addPlace, updatePlace, removePlace, setPlaces } = useTripPlacesStore();
   const places = placesByTrip[tripId] || [];
   const loading = loadingByTrip[tripId] ?? true;
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<Omit<Place, 'id'>>();
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<PlaceForm>();
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState<Partial<Place>>({});
+  const [editForm, setEditForm] = useState<Partial<PlaceForm>>({});
   const [editErrors, setEditErrors] = useState<{ name?: string; type?: string }>({});
   const [dialogOpen, setDialogOpen] = useState(false);
   const [fileUploading, setFileUploading] = useState(false);
@@ -93,17 +100,20 @@ export function TripPlaces({ tripId }: { tripId: string }) {
   }, [tripId, fetchPlaces, placesByTrip]);
 
   useEffect(() => {
-    let ably: any = null;
     let channel: any = null;
     let unsubscribes: (() => void)[] = [];
+    let ably: any = null;
     let isMounted = true;
     async function setupAbly() {
-      const res = await fetch('/api/ably-token');
-      if (!res.ok) return;
-      const tokenRequest = await res.json();
-      ably = new (require('ably')).Realtime({ token: tokenRequest });
+      console.log("Subscribing to Ably channel for trip", tripId);
+      ably = await getAblyClient();
       channel = ably.channels.get(`places:${tripId}`);
-      const handlePlaceCreated = (msg: any) => { addPlace(tripId, msg.data); };
+      const handlePlaceCreated = (msg: any) => {
+        console.log("Ably event received", msg.data);
+        if (!(placesByTrip[tripId] || []).some(p => p.id === msg.data.id)) {
+          addPlace(tripId, msg.data);
+        }
+      };
       const handlePlaceDeleted = (msg: any) => { removePlace(tripId, msg.data.id); };
       const handlePlaceUpdated = (msg: any) => { updatePlace(tripId, msg.data); };
       channel.subscribe('place-created', handlePlaceCreated);
@@ -119,9 +129,9 @@ export function TripPlaces({ tripId }: { tripId: string }) {
     return () => {
       isMounted = false;
       unsubscribes.forEach(fn => fn());
-      if (ably) ably.close();
+      // Do not close the singleton ably client here, just unsubscribe
     };
-  }, [tripId, addPlace, removePlace, updatePlace]);
+  }, [tripId, addPlace, removePlace, updatePlace, placesByTrip]);
 
   async function handleFileUpload(file: File) {
     if (!file) return;
@@ -168,18 +178,37 @@ export function TripPlaces({ tripId }: { tripId: string }) {
     if (file) handleFileUpload(file);
   }
 
-  const onSubmit = (data: Omit<Place, 'id'>) => {
+  function extractLatLngFromGoogleMapsUrl(url: string): { lat: number, lng: number } | null {
+    const match = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+    if (match) {
+      return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+    }
+    return null;
+  }
+
+  const onSubmit = (data: any) => {
     startTransition(async () => {
+      let latitude, longitude;
+      if (data.googleMapsLink) {
+        const coords = extractLatLngFromGoogleMapsUrl(data.googleMapsLink);
+        if (coords) {
+          latitude = coords.lat;
+          longitude = coords.lng;
+        }
+      }
       const res = await fetch(`/api/trips/${tripId}/places`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          link: data.websiteLink,
+          latitude,
+          longitude,
+        }),
       });
       if (res.ok) {
-        const newPlace = await res.json();
-        addPlace(tripId, newPlace);
-        // If a file was uploaded, associate it with the new place
         if (uploadedFile) {
+          const newPlace = await res.json();
           await fetch(`/api/trips/${tripId}/places/files`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -211,7 +240,11 @@ export function TripPlaces({ tripId }: { tripId: string }) {
 
   const handleEdit = (place: Place) => {
     setEditingId(place.id);
-    setEditForm({ ...place });
+    setEditForm({
+      ...place,
+      websiteLink: place.link || '',
+      googleMapsLink: '', // You may want to prefill this if you store it
+    });
     setEditErrors({});
     setEditDialogOpen(true);
   };
@@ -228,11 +261,25 @@ export function TripPlaces({ tripId }: { tripId: string }) {
     if (!editForm.type) errors.type = "Type is required";
     setEditErrors(errors);
     if (Object.keys(errors).length > 0) return false;
+    // Extract lat/lng
+    let latitude, longitude;
+    if (editForm.googleMapsLink) {
+      const coords = extractLatLngFromGoogleMapsUrl(editForm.googleMapsLink);
+      if (coords) {
+        latitude = coords.lat;
+        longitude = coords.lng;
+      }
+    }
     // Save
     const res = await fetch(`/api/trips/${tripId}/places`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(editForm),
+      body: JSON.stringify({
+        ...editForm,
+        link: editForm.websiteLink,
+        latitude,
+        longitude,
+      }),
     });
     if (res.ok) {
       const updated = await res.json();
@@ -280,7 +327,10 @@ export function TripPlaces({ tripId }: { tripId: string }) {
               <input {...register("address") } placeholder="Address (optional)" className="w-full border rounded px-3 py-2" />
             </div>
             <div>
-              <input {...register("link") } placeholder="Link (optional)" className="w-full border rounded px-3 py-2" />
+              <input {...register("websiteLink")} placeholder="Website Link (optional)" className="w-full border rounded px-3 py-2" />
+            </div>
+            <div>
+              <input {...register("googleMapsLink")} placeholder="Google Maps Link (optional, for map)" className="w-full border rounded px-3 py-2" />
             </div>
             <div>
               <input
@@ -409,7 +459,10 @@ export function TripPlaces({ tripId }: { tripId: string }) {
               <input name="address" value={editForm.address || ""} onChange={handleEditChange} placeholder="Address (optional)" className="w-full border rounded px-3 py-2" />
             </div>
             <div>
-              <input name="link" value={editForm.link || ""} onChange={handleEditChange} placeholder="Link (optional)" className="w-full border rounded px-3 py-2" />
+              <input name="websiteLink" value={editForm.websiteLink || ""} onChange={handleEditChange} placeholder="Website Link (optional)" className="w-full border rounded px-3 py-2" />
+            </div>
+            <div>
+              <input name="googleMapsLink" value={editForm.googleMapsLink || ""} onChange={handleEditChange} placeholder="Google Maps Link (optional, for map)" className="w-full border rounded px-3 py-2" />
             </div>
             <div>
               <input

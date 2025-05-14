@@ -1,10 +1,11 @@
 "use client";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState, useTransition, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { create } from 'zustand';
+import { getAblyClient } from '@/lib/ablyClient';
 
 interface Accommodation {
   id: string;
@@ -57,14 +58,28 @@ export const useTripAccommodationsStore = create<TripAccommodationsState>((set, 
   },
 }));
 
+function extractLatLngFromGoogleMapsUrl(url: string): { lat: number, lng: number } | null {
+  const match = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+  if (match) {
+    return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+  }
+  return null;
+}
+
+// Extend the Accommodation type for the form
+interface AccommodationForm extends Omit<Accommodation, 'id'> {
+  websiteLink?: string;
+  googleMapsLink?: string;
+}
+
 export function TripAccommodations({ tripId }: { tripId: string }) {
   const [isPending, startTransition] = useTransition();
   const { accommodationsByTrip, loadingByTrip, fetchAccommodations, addAccommodation, updateAccommodation, removeAccommodation } = useTripAccommodationsStore();
   const accommodations = accommodationsByTrip[tripId] || [];
   const loading = loadingByTrip[tripId] ?? true;
-  const { register, handleSubmit, reset } = useForm<Omit<Accommodation, 'id'>>();
+  const { register, handleSubmit, reset } = useForm<AccommodationForm>();
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState<Partial<Accommodation>>({});
+  const [editForm, setEditForm] = useState<Partial<AccommodationForm>>({});
   const [editErrors, setEditErrors] = useState<{ name?: string; address?: string; checkIn?: string; checkOut?: string }>({});
   const { resolvedTheme } = useTheme();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -77,17 +92,18 @@ export function TripAccommodations({ tripId }: { tripId: string }) {
   }, [tripId, fetchAccommodations, accommodationsByTrip]);
 
   useEffect(() => {
-    let ably: any = null;
     let channel: any = null;
     let unsubscribes: (() => void)[] = [];
+    let ably: any = null;
     let isMounted = true;
     async function setupAbly() {
-      const res = await fetch('/api/ably-token');
-      if (!res.ok) return;
-      const tokenRequest = await res.json();
-      ably = new (require('ably')).Realtime({ token: tokenRequest });
+      ably = await getAblyClient();
       channel = ably.channels.get(`accommodations:${tripId}`);
-      const handleCreated = (msg: any) => { addAccommodation(tripId, msg.data); };
+      const handleCreated = (msg: any) => {
+        if (!(accommodationsByTrip[tripId] || []).some(a => a.id === msg.data.id)) {
+          addAccommodation(tripId, msg.data);
+        }
+      };
       const handleDeleted = (msg: any) => { removeAccommodation(tripId, msg.data.id); };
       const handleUpdated = (msg: any) => { updateAccommodation(tripId, msg.data); };
       channel.subscribe('accommodation-created', handleCreated);
@@ -103,20 +119,31 @@ export function TripAccommodations({ tripId }: { tripId: string }) {
     return () => {
       isMounted = false;
       unsubscribes.forEach(fn => fn());
-      if (ably) ably.close();
+      // Do not close the singleton ably client here, just unsubscribe
     };
-  }, [tripId, addAccommodation, removeAccommodation, updateAccommodation]);
+  }, [tripId, addAccommodation, removeAccommodation, updateAccommodation, accommodationsByTrip]);
 
-  const onSubmit = (data: Omit<Accommodation, 'id'>) => {
+  const onSubmit = (data: any) => {
     startTransition(async () => {
+      let latitude, longitude;
+      if (data.googleMapsLink) {
+        const coords = extractLatLngFromGoogleMapsUrl(data.googleMapsLink);
+        if (coords) {
+          latitude = coords.lat;
+          longitude = coords.lng;
+        }
+      }
       const res = await fetch(`/api/trips/${tripId}/accommodations`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          websiteLink: data.websiteLink,
+          latitude,
+          longitude,
+        }),
       });
       if (res.ok) {
-        const newAccommodation = await res.json();
-        addAccommodation(tripId, newAccommodation);
         reset();
         setDialogOpen(false);
       }
@@ -136,7 +163,11 @@ export function TripAccommodations({ tripId }: { tripId: string }) {
 
   const handleEdit = (acc: Accommodation) => {
     setEditingId(acc.id);
-    setEditForm({ ...acc });
+    setEditForm({
+      ...acc,
+      websiteLink: '', // You may want to prefill this if you store it
+      googleMapsLink: '', // You may want to prefill this if you store it
+    });
     setEditErrors({});
     setEditDialogOpen(true);
   };
@@ -155,11 +186,25 @@ export function TripAccommodations({ tripId }: { tripId: string }) {
     if (!editForm.checkOut) errors.checkOut = "Check-out is required";
     setEditErrors(errors);
     if (Object.keys(errors).length > 0) return false;
+    // Extract lat/lng
+    let latitude, longitude;
+    if (editForm.googleMapsLink) {
+      const coords = extractLatLngFromGoogleMapsUrl(editForm.googleMapsLink);
+      if (coords) {
+        latitude = coords.lat;
+        longitude = coords.lng;
+      }
+    }
     // Save
     const res = await fetch(`/api/trips/${tripId}/accommodations`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(editForm),
+      body: JSON.stringify({
+        ...editForm,
+        websiteLink: editForm.websiteLink,
+        latitude,
+        longitude,
+      }),
     });
     if (res.ok) {
       const updated = await res.json();
@@ -210,6 +255,12 @@ export function TripAccommodations({ tripId }: { tripId: string }) {
             <div>
               <input {...register("link")} placeholder="Booking Link (optional)" className="w-full border rounded px-3 py-2" />
             </div>
+            <div>
+              <input {...register("websiteLink")} placeholder="Website Link (optional)" className="w-full border rounded px-3 py-2" />
+            </div>
+            <div>
+              <input {...register("googleMapsLink")} placeholder="Google Maps Link (optional, for map)" className="w-full border rounded px-3 py-2" />
+            </div>
             <DialogFooter>
               <Button type="submit" disabled={isPending}>Add Accommodation</Button>
               <DialogClose asChild>
@@ -244,6 +295,12 @@ export function TripAccommodations({ tripId }: { tripId: string }) {
             </div>
             <div>
               <input name="link" value={editForm.link || ""} onChange={handleEditChange} placeholder="Booking Link (optional)" className="w-full border rounded px-3 py-2" />
+            </div>
+            <div>
+              <input name="websiteLink" value={editForm.websiteLink || ""} onChange={handleEditChange} placeholder="Website Link (optional)" className="w-full border rounded px-3 py-2" />
+            </div>
+            <div>
+              <input name="googleMapsLink" value={editForm.googleMapsLink || ""} onChange={handleEditChange} placeholder="Google Maps Link (optional, for map)" className="w-full border rounded px-3 py-2" />
             </div>
             <DialogFooter className="flex flex-row gap-2 justify-end">
               <Button type="submit">Save</Button>
