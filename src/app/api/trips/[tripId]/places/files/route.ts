@@ -9,14 +9,28 @@ const ably = new Ably.Rest(process.env.ABLY_API_KEY!);
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const placeId = searchParams.get('placeId');
-  if (!placeId) {
-    return NextResponse.json({ error: 'Missing placeId' }, { status: 400 });
+  const tripId = req.url.split('/trips/')[1]?.split('/')[0];
+
+  if (!tripId) {
+    return NextResponse.json({ error: 'Missing tripId' }, { status: 400 });
   }
-  const files = await prisma.placeFile.findMany({
-    where: { placeId },
-    orderBy: { createdAt: 'desc' },
-  });
-  return NextResponse.json(files);
+
+  if (placeId) {
+    // Get files for a specific place
+    const files = await prisma.placeFile.findMany({
+      where: { placeId },
+      orderBy: { createdAt: 'desc' },
+    });
+    return NextResponse.json(files);
+  } else {
+    // Get all place files for the trip
+    const files = await prisma.placeFile.findMany({
+      where: { place: { tripId } },
+      include: { place: { select: { id: true, name: true } } },
+      orderBy: { createdAt: 'desc' },
+    });
+    return NextResponse.json(files);
+  }
 }
 
 // POST /api/trips/[tripId]/places/files

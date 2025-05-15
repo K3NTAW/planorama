@@ -26,6 +26,7 @@ interface TripAccommodationsState {
   addAccommodation: (tripId: string, acc: Accommodation) => void;
   updateAccommodation: (tripId: string, acc: Accommodation) => void;
   removeAccommodation: (tripId: string, accId: string) => void;
+  setAccommodations: (tripId: string, accommodations: Accommodation[]) => void;
 }
 
 export const useTripAccommodationsStore = create<TripAccommodationsState>((set, get) => ({
@@ -70,6 +71,18 @@ export const useTripAccommodationsStore = create<TripAccommodationsState>((set, 
       },
     }));
   },
+  setAccommodations(tripId, accommodations) {
+    set(state => ({
+      accommodationsByTrip: {
+        ...state.accommodationsByTrip,
+        [tripId]: accommodations,
+      },
+      loadingByTrip: {
+        ...state.loadingByTrip,
+        [tripId]: false,
+      },
+    }));
+  },
 }));
 
 function extractLatLngFromGoogleMapsUrl(url: string): { lat: number, lng: number } | null {
@@ -92,21 +105,27 @@ interface AccommodationForm extends Omit<Accommodation, 'id'> {
   googleMapsLink?: string;
 }
 
-export function TripAccommodations({ tripId }: { tripId: string }) {
+interface TripAccommodationsProps {
+  tripId: string;
+  inDialog?: boolean;
+  onSuccess?: () => void;
+}
+
+export function TripAccommodations({ tripId, inDialog = false, onSuccess }: TripAccommodationsProps) {
   const [isPending, startTransition] = useTransition();
   const { accommodationsByTrip, loadingByTrip, fetchAccommodations, addAccommodation, updateAccommodation, removeAccommodation } = useTripAccommodationsStore();
   const accommodations = accommodationsByTrip[tripId] || [];
   const loading = loadingByTrip[tripId] ?? true;
-  const { register, handleSubmit, reset } = useForm<AccommodationForm>();
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<AccommodationForm>();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<AccommodationForm>>({});
   const [editErrors, setEditErrors] = useState<{ name?: string; address?: string; checkIn?: string; checkOut?: string }>({});
   const { resolvedTheme } = useTheme();
-  const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const accommodationsRef = useRef(accommodations);
-  useEffect(() => { accommodationsRef.current = accommodations; }, [accommodations]);
   const { toast } = useToast();
+
+  useEffect(() => { accommodationsRef.current = accommodations; }, [accommodations]);
 
   useEffect(() => {
     if (!accommodationsByTrip[tripId]) {
@@ -114,46 +133,13 @@ export function TripAccommodations({ tripId }: { tripId: string }) {
     }
   }, [tripId, fetchAccommodations, accommodationsByTrip]);
 
-  useEffect(() => {
-    let channel: any = null;
-    let unsubscribes: (() => void)[] = [];
-    let ably: any = null;
-    let isMounted = true;
-    async function setupAbly() {
-      console.log("Subscribing to Ably channel for trip", tripId);
-      ably = await getAblyClient();
-      channel = ably.channels.get(`accommodations:${tripId}`);
-      const handleCreated = (msg: any) => {
-        console.log("Ably event received (accommodation):", msg.data);
-        console.log("Current accommodationsRef before add:", accommodationsRef.current);
-        if (!(accommodationsRef.current || []).some(a => a.id === msg.data.id)) {
-          addAccommodation(tripId, msg.data);
-        }
-      };
-      const handleDeleted = (msg: any) => { removeAccommodation(tripId, msg.data.id); };
-      const handleUpdated = (msg: any) => { updateAccommodation(tripId, msg.data); };
-      channel.subscribe('accommodation-created', handleCreated);
-      channel.subscribe('accommodation-deleted', handleDeleted);
-      channel.subscribe('accommodation-updated', handleUpdated);
-      unsubscribes = [
-        () => channel.unsubscribe('accommodation-created', handleCreated),
-        () => channel.unsubscribe('accommodation-deleted', handleDeleted),
-        () => channel.unsubscribe('accommodation-updated', handleUpdated),
-      ];
-    }
-    setupAbly();
-    return () => {
-      isMounted = false;
-      unsubscribes.forEach(fn => fn());
-      console.log("Unsubscribed from Ably channel for trip", tripId);
-    };
-  }, [tripId, addAccommodation, removeAccommodation, updateAccommodation]);
-
   const onSubmit = (data: any) => {
     startTransition(async () => {
       let latitude, longitude;
       if (data.googleMapsLink) {
+        console.log("Google Maps Link:", data.googleMapsLink);
         const coords = extractLatLngFromGoogleMapsUrl(data.googleMapsLink);
+        console.log("Extracted coords:", coords);
         if (coords) {
           latitude = coords.lat;
           longitude = coords.lng;
@@ -164,14 +150,21 @@ export function TripAccommodations({ tripId }: { tripId: string }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...data,
-          websiteLink: data.websiteLink,
+          link: data.websiteLink,
           latitude,
           longitude,
         }),
       });
       if (res.ok) {
+        const newAccommodation = await res.json();
+        // Update the store
+        addAccommodation(tripId, newAccommodation);
         reset();
-        setDialogOpen(false);
+        if (!inDialog) {
+          setEditDialogOpen(false);
+        } else {
+          onSuccess?.();
+        }
         toast({ title: "Accommodation created", description: "The accommodation was added successfully." });
       } else {
         const data = await res.json().catch(() => ({}));
@@ -268,47 +261,33 @@ export function TripAccommodations({ tripId }: { tripId: string }) {
   }
 
   return (
-    <div>
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogTrigger asChild>
-          <Button onClick={() => setDialogOpen(true)} className="mb-4">Add Accommodation</Button>
-        </DialogTrigger>
-        <DialogContent className="bg-white dark:bg-card dark:text-white border border-gray-200 dark:border-gray-700">
-          <DialogHeader className="dark:text-white">
-            <DialogTitle>Add Accommodation</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-2">
-            <div>
-              <input {...register("name", { required: true })} placeholder="Name" className="w-full border rounded px-3 py-2" />
+    <div className="relative">
+      <div className="space-y-4">
+        {accommodations.length === 0 ? (
+          <div className="text-gray-500">No accommodations added yet.</div>
+        ) : (
+          accommodations.map(acc => (
+            <div
+              key={acc.id}
+              className={`border rounded p-4 bg-white dark:bg-card flex justify-between items-start gap-4`}
+            >
+              <div className="flex-1">
+                <div className="font-semibold text-lg">{acc.name}</div>
+                <div className="text-gray-600">{acc.address}</div>
+                <div className="text-gray-500 text-sm">
+                  Check-in: {new Date(acc.checkIn).toLocaleString()}<br />
+                  Check-out: {new Date(acc.checkOut).toLocaleString()}
+                </div>
+                {acc.link && <a href={acc.link} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">Booking Link</a>}
+              </div>
+              <div className="flex flex-col gap-2">
+                <Button size="sm" variant="outline" onClick={() => handleEdit(acc)}>Edit</Button>
+                <Button variant="destructive" size="sm" onClick={() => handleDelete(acc.id)}>Delete</Button>
+              </div>
             </div>
-            <div>
-              <input {...register("address", { required: true })} placeholder="Address" className="w-full border rounded px-3 py-2" />
-            </div>
-            <div>
-              <input type="datetime-local" {...register("checkIn", { required: true })} className="w-full border rounded px-3 py-2" />
-            </div>
-            <div>
-              <input type="datetime-local" {...register("checkOut", { required: true })} className="w-full border rounded px-3 py-2" />
-            </div>
-            <div>
-              <input {...register("link")} placeholder="Booking Link (optional)" className="w-full border rounded px-3 py-2" />
-            </div>
-            <div>
-              <input {...register("websiteLink")} placeholder="Website Link (optional)" className="w-full border rounded px-3 py-2" />
-            </div>
-            <div>
-              <input {...register("googleMapsLink")} placeholder="Google Maps Link (optional, for map)" className="w-full border rounded px-3 py-2" />
-            </div>
-            <DialogFooter>
-              <Button type="submit" disabled={isPending}>Add Accommodation</Button>
-              <DialogClose asChild>
-                <Button type="button" variant="secondary" onClick={() => setDialogOpen(false)}>Cancel</Button>
-              </DialogClose>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-      {/* Edit Accommodation Dialog */}
+          ))
+        )}
+      </div>
       <Dialog open={editDialogOpen} onOpenChange={open => { if (!open) handleEditDialogClose(); }}>
         <DialogContent className="bg-white dark:bg-card dark:text-white border border-gray-200 dark:border-gray-700">
           <DialogHeader className="dark:text-white">
@@ -349,32 +328,6 @@ export function TripAccommodations({ tripId }: { tripId: string }) {
           </form>
         </DialogContent>
       </Dialog>
-      <div className="space-y-4">
-        {accommodations.length === 0 ? (
-          <div className="text-gray-500">No accommodations added yet.</div>
-        ) : (
-          accommodations.map(acc => (
-            <div
-              key={acc.id}
-              className={`border rounded p-4 bg-white dark:bg-card flex justify-between items-start gap-4`}
-            >
-              <div className="flex-1">
-                <div className="font-semibold text-lg">{acc.name}</div>
-                <div className="text-gray-600">{acc.address}</div>
-                <div className="text-gray-500 text-sm">
-                  Check-in: {new Date(acc.checkIn).toLocaleString()}<br />
-                  Check-out: {new Date(acc.checkOut).toLocaleString()}
-                </div>
-                {acc.link && <a href={acc.link} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">Booking Link</a>}
-              </div>
-              <div className="flex flex-col gap-2">
-                <Button size="sm" variant="outline" onClick={() => handleEdit(acc)}>Edit</Button>
-                <Button variant="destructive" size="sm" onClick={() => handleDelete(acc.id)}>Delete</Button>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
     </div>
   );
 }
