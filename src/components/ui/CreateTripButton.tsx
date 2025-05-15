@@ -119,14 +119,18 @@ export function CreateTripButton({ onTripCreated }: CreateTripButtonProps) {
         }
       }
 
+      // Format dates as ISO strings
+      const startDate = formData.get("startDate") as string;
+      const endDate = formData.get("endDate") as string;
+
       const res = await fetch("/api/trips", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: formData.get("name"),
           destination: formData.get("destination"),
-          startDate: formData.get("startDate"),
-          endDate: formData.get("endDate"),
+          startDate: new Date(startDate).toISOString(),
+          endDate: new Date(endDate).toISOString(),
           bannerUrl,
         }),
       });

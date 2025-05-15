@@ -26,6 +26,13 @@ export default async function TripDetailsPage(props: any) {
 
   if (!trip) return notFound();
 
+  // Convert dates to ISO strings for the client component
+  const tripForClient = {
+    ...trip,
+    startDate: trip.startDate.toISOString(),
+    endDate: trip.endDate.toISOString(),
+  };
+
   // Fetch places and accommodations with lat/lng
   const places = await prisma.place.findMany({
     where: { tripId },
@@ -62,7 +69,7 @@ export default async function TripDetailsPage(props: any) {
       {/* Accept invite dialog on page load */}
       <AcceptInviteDialog tripId={tripId} />
       {/* Banner and trip info (client-side for real-time/optimistic updates) */}
-      <TripHeaderClient initialTrip={trip} tripId={tripId} />
+      <TripHeaderClient initialTrip={tripForClient} tripId={tripId} />
       <Tabs defaultValue="places" className="w-full max-w-full">
         <TabsList className="mb-4 w-full max-w-full overflow-x-auto">
           <TabsTrigger value="places">Places</TabsTrigger>
