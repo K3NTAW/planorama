@@ -4,6 +4,13 @@ import { useDailyStore } from '@/store/useDailyStore';
 import { TripMap } from '@/components/trip/TripMap';
 import { getAblyClient } from '@/lib/ablyClient';
 
+export const viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#f9fafb' },
+    { media: '(prefers-color-scheme: dark)', color: '#18181B' },
+  ],
+};
+
 export default function DailyPage() {
   const { todayPlaces, todayAccommodations, loading, fetchToday } = useDailyStore();
   const ablyRef = useRef<any>(null);

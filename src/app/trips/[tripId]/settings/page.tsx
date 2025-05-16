@@ -8,13 +8,13 @@ import { useState, useEffect } from "react";
 import { Loader, ArrowLeft, Settings } from "lucide-react";
 import { TripCollaborators } from "@/components/trip/TripCollaborators";
 import { TripEditDialog } from "@/components/trip/TripEditDialog";
+import { TripDeleteButtonWithConfirm } from "@/components/ui/TripDeleteButtonWithConfirm";
 
 export default function TripSettingsPage() {
   const params = useParams();
   const router = useRouter();
   const tripId = params.tripId as string;
   const { toast } = useToast();
-  const [isDeleting, setIsDeleting] = useState(false);
   const [tripName, setTripName] = useState<string>("");
 
   useEffect(() => {
@@ -32,38 +32,6 @@ export default function TripSettingsPage() {
 
     fetchTripDetails();
   }, [tripId]);
-
-  const handleDeleteTrip = async () => {
-    if (!confirm("Are you sure you want to delete this trip? This action cannot be undone.")) {
-      return;
-    }
-
-    setIsDeleting(true);
-    try {
-      const res = await fetch(`/api/trips/${tripId}`, {
-        method: "DELETE",
-      });
-
-      if (res.ok) {
-        toast({
-          title: "Trip deleted",
-          description: "The trip was deleted successfully.",
-        });
-        router.push("/trips");
-      } else {
-        throw new Error("Failed to delete trip");
-      }
-    } catch (error) {
-      console.error("Error deleting trip:", error);
-      toast({
-        title: "Failed to delete trip",
-        description: "Something went wrong. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsDeleting(false);
-    }
-  };
 
   const handleTripUpdated = async () => {
     // Refresh trip name after update
@@ -110,21 +78,7 @@ export default function TripSettingsPage() {
                     Permanently delete this trip and all its data. This action cannot be undone.
                   </p>
                 </div>
-                <Button
-                  variant="destructive"
-                  onClick={handleDeleteTrip}
-                  disabled={isDeleting}
-                  className="w-full sm:w-auto"
-                >
-                  {isDeleting ? (
-                    <>
-                      <Loader className="mr-2 h-4 w-4 animate-spin" />
-                      Deleting...
-                    </>
-                  ) : (
-                    "Delete Trip"
-                  )}
-                </Button>
+                <TripDeleteButtonWithConfirm tripId={tripId} />
               </div>
             </CardContent>
           </Card>

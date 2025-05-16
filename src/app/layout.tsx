@@ -12,16 +12,19 @@ const inter = Inter({
   fallback: ['system-ui', 'arial'],
 });
 
+export const viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#f9fafb' },
+    { media: '(prefers-color-scheme: dark)', color: '#18181B' },
+  ],
+};
+
 export const metadata = {
   title: 'Planorama',
   icons: {
     icon: '/planorama-logo.png',
   },
   manifest: '/manifest.json',
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#f9fafb' },
-    { media: '(prefers-color-scheme: dark)', color: '#18181B' },
-  ],
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
