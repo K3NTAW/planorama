@@ -213,7 +213,6 @@ export function TripTabs({ tripId, initialPlacesCount, initialAccommodationsCoun
         {showAccommodationTab && <TabsTrigger value="accommodation">Accommodation</TabsTrigger>}
         {showFilesTab && <TabsTrigger value="files">Files</TabsTrigger>}
         {showMapTab && <TabsTrigger value="map">Map</TabsTrigger>}
-        <TabsTrigger value="settings">Settings</TabsTrigger>
       </TabsList>
       {showPlacesTab && (
         <TabsContent value="places">
@@ -257,9 +256,6 @@ export function TripTabs({ tripId, initialPlacesCount, initialAccommodationsCoun
           </Card>
         </TabsContent>
       )}
-      <TabsContent value="settings">
-        <TripSettingsTab tripId={tripId} />
-      </TabsContent>
     </Tabs>
   );
 } 
