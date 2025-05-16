@@ -14,6 +14,9 @@ import { uploadToCloudinary } from "@/lib/cloudinary";
 import { useTripFilesStore } from "@/components/trip/TripFilesTab";
 import { useParams, useRouter } from "next/navigation";
 import { TripEditDialog } from "@/components/trip/TripEditDialog";
+import { useTripPlacesStore } from "@/components/ui/TripPlaces";
+import { useTripAccommodationsStore } from "@/components/ui/TripAccommodations";
+import { Place, Accommodation } from "@/types/trip";
 
 interface Trip {
   id: string;
@@ -29,10 +32,10 @@ interface PlaceForm {
   name: string;
   type: string;
   address?: string;
-  websiteLink?: string;
-  googleMapsLink?: string;
-  date?: string;
+  link?: string;
   notes?: string;
+  date?: string;
+  googleMapsLink?: string;
 }
 
 interface AccommodationForm {
@@ -43,27 +46,6 @@ interface AccommodationForm {
   websiteLink?: string;
   googleMapsLink?: string;
   link?: string;
-}
-
-interface Accommodation {
-  id: string;
-  name: string;
-  address: string;
-  checkIn: string;
-  checkOut: string;
-  websiteLink?: string;
-  googleMapsLink?: string;
-  link?: string;
-}
-
-interface Place {
-  id: string;
-  name: string;
-  type: string;
-  latitude?: number;
-  longitude?: number;
-  notes?: string;
-  files?: { url: string }[];
 }
 
 const PLACE_TYPES = [
@@ -133,9 +115,13 @@ export default function TripHeaderClient({ initialTrip, tripId }: { initialTrip:
   const [isFileDragging, setIsFileDragging] = useState(false);
   const [activeTab, setActiveTab] = useState<'places' | 'accommodations'>('places');
   const [selectedPlaceId, setSelectedPlaceId] = useState('');
-  const [places, setPlaces] = useState<Place[]>([]);
+  const { setPlaces, placesByTrip } = useTripPlacesStore();
+  const { setAccommodations } = useTripAccommodationsStore();
   const params = useParams();
   const router = useRouter();
+
+  // Get places from the store
+  const places = placesByTrip[tripId] || [];
 
   // Real-time Ably subscription
   useEffect(() => {
@@ -168,7 +154,7 @@ export default function TripHeaderClient({ initialTrip, tripId }: { initialTrip:
         const res = await fetch(`/api/trips/${tripId}/places`);
         if (res.ok) {
           const placesData = await res.json();
-          setPlaces(placesData);
+          setPlaces(tripId, placesData);
         }
       } catch (error) {
         console.error("Error fetching places:", error);
@@ -210,26 +196,17 @@ export default function TripHeaderClient({ initialTrip, tripId }: { initialTrip:
         body: JSON.stringify({
           ...data,
           type: typeToSend,
-          link: data.websiteLink,
+          link: data.link,
           latitude,
           longitude,
         }),
       });
       if (res.ok) {
-        if (uploadedFile) {
-          const newPlace = await res.json();
-          await fetch(`/api/trips/${tripId}/places/files`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              placeId: newPlace.id,
-              url: uploadedFile.url,
-              name: uploadedFile.name,
-            }),
-          });
-        }
-        setUploadedFile(null);
-        setFileProgress(0);
+        const newPlace = await res.json();
+        // Update the store
+        const { placesByTrip } = useTripPlacesStore.getState();
+        const currentPlaces = placesByTrip[tripId] || [];
+        setPlaces(tripId, [...currentPlaces, newPlace]);
         toast({ title: "Place created", description: "The place was added successfully." });
         handleSuccess();
       } else {
@@ -268,10 +245,10 @@ export default function TripHeaderClient({ initialTrip, tripId }: { initialTrip:
       });
       if (res.ok) {
         const newAccommodation = await res.json();
-        setTrip(prevTrip => ({
-          ...prevTrip,
-          accommodations: [...(prevTrip.accommodations || []), newAccommodation],
-        }));
+        // Update the store
+        const { accommodationsByTrip } = useTripAccommodationsStore.getState();
+        const currentAccommodations = accommodationsByTrip[tripId] || [];
+        setAccommodations(tripId, [...currentAccommodations, newAccommodation]);
         toast({ title: "Accommodation created", description: "The accommodation was added successfully." });
         handleSuccess();
       } else {
@@ -635,7 +612,7 @@ export default function TripHeaderClient({ initialTrip, tripId }: { initialTrip:
                   </div>
                   <div>
                     <input
-                      {...placeForm.register("websiteLink")}
+                      {...placeForm.register("link")}
                       placeholder="Website Link (optional)"
                       className="w-full border rounded px-3 py-2"
                     />

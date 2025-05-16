@@ -7,17 +7,7 @@ import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, Dialog
 import { create } from 'zustand';
 import { getAblyClient } from '@/lib/ablyClient';
 import { useToast } from "@/components/ui/use-toast";
-
-interface Accommodation {
-  id: string;
-  name: string;
-  address: string;
-  checkIn: string;
-  checkOut: string;
-  link?: string;
-  websiteLink?: string;
-  googleMapsLink?: string;
-}
+import { Accommodation } from "@/types/trip";
 
 interface TripAccommodationsState {
   accommodationsByTrip: Record<string, Accommodation[]>;

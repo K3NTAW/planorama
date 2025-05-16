@@ -13,17 +13,7 @@ import { create } from 'zustand';
 import { getAblyClient } from '@/lib/ablyClient';
 import { useToast } from "@/components/ui/use-toast";
 import { useTheme } from "next-themes";
-
-interface Place {
-  id: string;
-  name: string;
-  type: string;
-  address?: string;
-  link?: string;
-  notes?: string;
-  date?: string;
-  googleMapsLink?: string;
-}
+import { Place } from "@/types/trip";
 
 interface TripPlacesState {
   placesByTrip: Record<string, Place[]>;

@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import * as React from "react";
+import * as TabsPrimitive from "@radix-ui/react-tabs";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { TripPlaces } from "@/components/ui/TripPlaces";
@@ -12,8 +14,9 @@ import { useTripPlacesStore } from "@/components/ui/TripPlaces";
 import { useTripAccommodationsStore } from "@/components/ui/TripAccommodations";
 import { useTripFilesStore } from "@/components/trip/TripFilesTab";
 import { getAblyClient } from "@/lib/ablyClient";
+import { Place, Accommodation } from "@/types/trip";
 
-function FilesSkeleton() {
+function FilesSkeleton(): React.ReactElement {
   return (
     <div className="space-y-4 p-4">
       {[...Array(3)].map((_, i) => (
@@ -30,25 +33,7 @@ interface TripTabsProps {
   initialFilesCount: number;
 }
 
-interface Place {
-  id: string;
-  name: string;
-  type: string;
-  latitude?: number;
-  longitude?: number;
-  notes?: string;
-  files?: { url: string }[];
-}
-
-interface Accommodation {
-  id: string;
-  name: string;
-  address?: string;
-  latitude?: number;
-  longitude?: number;
-}
-
-export function TripTabs({ tripId, initialPlacesCount, initialAccommodationsCount, initialFilesCount }: TripTabsProps) {
+export function TripTabs({ tripId, initialPlacesCount, initialAccommodationsCount, initialFilesCount }: TripTabsProps): React.ReactElement {
   const [showPlacesTab, setShowPlacesTab] = useState(initialPlacesCount > 0);
   const [showMapTab, setShowMapTab] = useState(false);
   const [showFilesTab, setShowFilesTab] = useState(initialFilesCount > 0);
@@ -68,28 +53,30 @@ export function TripTabs({ tripId, initialPlacesCount, initialAccommodationsCoun
   const handlePlacesUpdate = useCallback((msg: any) => {
     if (!isMounted.current) return;
     if (msg.data.type === 'place-created') {
-      setPlaces(tripId, [...places, msg.data]);
+      const newPlaces = [...places, msg.data];
+      setPlaces(tripId, newPlaces);
       setShowPlacesTab(true);
     } else if (msg.data.type === 'place-updated') {
-      setPlaces(tripId, places.map(p => p.id === msg.data.id ? msg.data : p));
+      const newPlaces = places.map(p => p.id === msg.data.id ? msg.data : p);
+      setPlaces(tripId, newPlaces);
     } else if (msg.data.type === 'place-deleted') {
       const newPlaces = places.filter(p => p.id !== msg.data.id);
       setPlaces(tripId, newPlaces);
-      setShowPlacesTab(newPlaces.length > 0);
     }
   }, [tripId, places, setPlaces]);
 
   const handleAccommodationsUpdate = useCallback((msg: any) => {
     if (!isMounted.current) return;
     if (msg.data.type === 'accommodation-created') {
-      setAccommodations(tripId, [...accommodations, msg.data]);
+      const newAccommodations = [...accommodations, msg.data];
+      setAccommodations(tripId, newAccommodations);
       setShowAccommodationTab(true);
     } else if (msg.data.type === 'accommodation-updated') {
-      setAccommodations(tripId, accommodations.map(a => a.id === msg.data.id ? msg.data : a));
+      const newAccommodations = accommodations.map(a => a.id === msg.data.id ? msg.data : a);
+      setAccommodations(tripId, newAccommodations);
     } else if (msg.data.type === 'accommodation-deleted') {
       const newAccommodations = accommodations.filter(a => a.id !== msg.data.id);
       setAccommodations(tripId, newAccommodations);
-      setShowAccommodationTab(newAccommodations.length > 0);
     }
   }, [tripId, accommodations, setAccommodations]);
 
@@ -98,20 +85,35 @@ export function TripTabs({ tripId, initialPlacesCount, initialAccommodationsCoun
     const store = useTripFilesStore.getState();
     if (msg.data.type === 'file-created') {
       store.addTripFile(tripId, msg.data);
-      // Get the latest state after the update
-      const { filesByTrip, placeFilesByTrip } = useTripFilesStore.getState();
-      const tripFiles = filesByTrip[tripId] || [];
-      const placeFiles = placeFilesByTrip[tripId] || [];
-      setShowFilesTab(tripFiles.length > 0 || placeFiles.length > 0);
+      setShowFilesTab(true);
     } else if (msg.data.type === 'file-deleted') {
       store.removeTripFile(tripId, msg.data.id);
-      // Get the latest state after the update
-      const { filesByTrip, placeFilesByTrip } = useTripFilesStore.getState();
-      const tripFiles = filesByTrip[tripId] || [];
-      const placeFiles = placeFilesByTrip[tripId] || [];
-      setShowFilesTab(tripFiles.length > 0 || placeFiles.length > 0);
     }
   }, [tripId]);
+
+  // Keep the effects to ensure tab visibility stays in sync with data
+  useEffect(() => {
+    setShowPlacesTab(places.length > 0);
+  }, [places]);
+
+  useEffect(() => {
+    setShowAccommodationTab(accommodations.length > 0);
+  }, [accommodations]);
+
+  useEffect(() => {
+    setShowFilesTab(tripFiles.length > 0 || placeFiles.length > 0);
+  }, [tripFiles, placeFiles]);
+
+  // Add effect to update map tab visibility
+  useEffect(() => {
+    const hasPlacesWithCoordinates = places.some(place => 
+      typeof place.latitude === 'number' && typeof place.longitude === 'number'
+    );
+    const hasAccommodationsWithCoordinates = accommodations.some(acc => 
+      typeof acc.latitude === 'number' && typeof acc.longitude === 'number'
+    );
+    setShowMapTab(hasPlacesWithCoordinates || hasAccommodationsWithCoordinates);
+  }, [places, accommodations]);
 
   // Real-time Ably subscription
   useEffect(() => {
@@ -123,18 +125,6 @@ export function TripTabs({ tripId, initialPlacesCount, initialAccommodationsCoun
       ably = await getAblyClient();
       if (!isMounted.current) return;
       
-      // Subscribe to the main trips channel for tab visibility
-      const tripsChannel = ably.channels.get('trips');
-      const tripsHandler = (msg: any) => {
-        if (!isMounted.current) return;
-        if (msg.data.id === tripId) {
-          setShowPlacesTab(msg.data.places?.length > 0);
-          setShowAccommodationTab(msg.data.accommodations?.length > 0);
-          setShowFilesTab(msg.data.files?.length > 0);
-        }
-      };
-      tripsChannel.subscribe('trip-updated', tripsHandler);
-
       // Subscribe to places channel
       const placesChannel = ably.channels.get(`places:${tripId}`);
       placesChannel.subscribe(['place-created', 'place-updated', 'place-deleted'], handlePlacesUpdate);
@@ -148,7 +138,6 @@ export function TripTabs({ tripId, initialPlacesCount, initialAccommodationsCoun
       filesChannel.subscribe(['file-created', 'file-deleted'], handleFilesUpdate);
 
       return () => {
-        tripsChannel.unsubscribe('trip-updated', tripsHandler);
         placesChannel.unsubscribe(['place-created', 'place-updated', 'place-deleted'], handlePlacesUpdate);
         accChannel.unsubscribe(['accommodation-created', 'accommodation-updated', 'accommodation-deleted'], handleAccommodationsUpdate);
         filesChannel.unsubscribe(['file-created', 'file-deleted'], handleFilesUpdate);

@@ -2,23 +2,7 @@
 import { useEffect, useState, useRef } from "react";
 import { TripMap } from "@/components/trip/TripMap";
 import { getAblyClient } from "@/lib/ablyClient";
-
-interface Place {
-  id: string;
-  name: string;
-  type?: string;
-  latitude?: number | null;
-  longitude?: number | null;
-  notes?: string;
-  files?: { url: string }[];
-}
-interface Accommodation {
-  id: string;
-  name: string;
-  address?: string;
-  latitude?: number | null;
-  longitude?: number | null;
-}
+import { Place, Accommodation } from "@/types/trip";
 
 export function TripMapTab({ tripId }: { tripId: string }) {
   const [places, setPlaces] = useState<Place[]>([]);
