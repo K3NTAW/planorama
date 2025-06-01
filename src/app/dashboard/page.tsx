@@ -27,6 +27,6 @@ export default async function DashboardPage() {
   }
 
   return (
-    <TripList userId={user.id} />
+    <TripList userId={user.id} userName={user.firstName || 'there'} />
   );
 } 

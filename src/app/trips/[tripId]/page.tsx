@@ -3,6 +3,11 @@ import { notFound } from 'next/navigation';
 import { AcceptInviteDialog } from '@/components/ui/AcceptInviteDialog';
 import TripHeaderClient from '@/components/trip/TripHeaderClient';
 import { TripTabs } from '@/components/trip/TripTabs';
+import Image from 'next/image';
+import { TripEditDialog } from '@/components/trip/TripEditDialog';
+import { ArrowLeft } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { BackButton } from '@/components/ui/BackButton';
 
 const prisma = new PrismaClient();
 
@@ -44,16 +49,41 @@ export default async function TripDetailsPage(props: any) {
   const initialFilesCount = tripFiles.length + placeFiles.length;
 
   return (
-    <div className="max-w-3xl w-full mx-auto px-2 sm:px-4 md:px-6 py-6 overflow-x-hidden">
-      <AcceptInviteDialog tripId={tripId} />
-      <TripHeaderClient initialTrip={tripForClient} tripId={tripId} />
-      <TripTabs 
-        tripId={tripId} 
-        initialPlacesCount={places.length} 
-        initialAccommodationsCount={accommodations.length}
-        initialFilesCount={initialFilesCount}
-      />
-      <div className="h-24" />
-    </div>
+    <>
+      <div className="relative w-full">
+        {/* Banner */}
+        <div className="relative left-1/2 right-1/2 -mx-[50vw] w-screen h-64 sm:h-80 rounded-b-2xl overflow-hidden">
+          {tripForClient.bannerUrl && (
+            <Image
+              src={tripForClient.bannerUrl}
+              alt={tripForClient.name}
+              fill
+              className="object-cover"
+              priority
+            />
+          )}
+          {/* Back button top left */}
+          <BackButton />
+          <div className="absolute top-8 right-3 z-40">
+            <TripEditDialog tripId={tripId} />
+          </div>
+        </div>
+        {/* Card overlays the banner with negative margin */}
+        <div className="max-w-xl w-full mx-auto relative z-30" style={{ marginTop: '-256px' }}>
+          <TripHeaderClient initialTrip={tripForClient} tripId={tripId} />
+        </div>
+      </div>
+      {/* Main content container */}
+      <div className="max-w-3xl w-full mx-auto px-2 sm:px-4 md:px-6 py-6 overflow-x-hidden">
+        <AcceptInviteDialog tripId={tripId} />
+        <TripTabs 
+          tripId={tripId} 
+          initialPlacesCount={places.length} 
+          initialAccommodationsCount={accommodations.length}
+          initialFilesCount={initialFilesCount}
+        />
+        <div className="h-24" />
+      </div>
+    </>
   );
 } 

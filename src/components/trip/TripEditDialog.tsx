@@ -13,7 +13,7 @@ import { uploadToCloudinary } from "@/lib/cloudinary";
 
 interface TripEditDialogProps {
   tripId: string;
-  onTripUpdated?: () => void;
+  onTripUpdated?: (updatedTrip: any) => void;
   onOpenChange?: (open: boolean) => void;
 }
 
@@ -91,7 +91,7 @@ export function TripEditDialog({ tripId, onTripUpdated, onOpenChange }: TripEdit
       const updated = await res.json();
       setEditOpen(false);
       toast({ title: 'Trip updated', description: 'Trip details updated successfully.' });
-      onTripUpdated?.();
+      onTripUpdated?.(updated);
     } else {
       const data = await res.json().catch(() => ({}));
       toast({ title: 'Failed to update trip', description: data.error || 'Something went wrong.', variant: 'destructive' });
@@ -160,7 +160,7 @@ export function TripEditDialog({ tripId, onTripUpdated, onOpenChange }: TripEdit
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8"
+          className="h-8 w-8 bg-red-500 shadow-lg"
         >
           <Pencil className="h-4 w-4" />
         </Button>

@@ -17,6 +17,8 @@ import { TripEditDialog } from "@/components/trip/TripEditDialog";
 import { useTripPlacesStore } from "@/components/ui/TripPlaces";
 import { useTripAccommodationsStore } from "@/components/ui/TripAccommodations";
 import { Place, Accommodation } from "@/types/trip";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { useTripCollaboratorsStore } from "@/components/trip/TripCollaborators";
 
 interface Trip {
   id: string;
@@ -119,6 +121,8 @@ export default function TripHeaderClient({ initialTrip, tripId }: { initialTrip:
   const { setAccommodations } = useTripAccommodationsStore();
   const params = useParams();
   const router = useRouter();
+  const { collaboratorsByTrip, fetchCollaborators } = useTripCollaboratorsStore();
+  const collaborators = collaboratorsByTrip[tripId] || [];
 
   // Get places from the store
   const places = placesByTrip[tripId] || [];
@@ -167,6 +171,8 @@ export default function TripHeaderClient({ initialTrip, tripId }: { initialTrip:
   useEffect(() => {
     setTrip(initialTrip);
   }, [initialTrip]);
+
+  React.useEffect(() => { if (!collaboratorsByTrip[tripId]) fetchCollaborators(tripId); }, [tripId]);
 
   const handleSuccess = () => {
     setDialogOpen(false);
@@ -364,64 +370,74 @@ export default function TripHeaderClient({ initialTrip, tripId }: { initialTrip:
   return (
     <>
       <div className="flex justify-between mb-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => router.back()}
-          className="h-8 w-8"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <div className="flex gap-2">
-          <TripEditDialog 
-            tripId={tripId} 
-            onTripUpdated={() => {
-              // Refresh trip data after update
-              fetch(`/api/trips/${tripId}`)
-                .then(res => res.json())
-                .then(data => setTrip(data))
-                .catch(console.error);
-            }} 
-            onOpenChange={(open) => {
-              if (open) {
-                // Fetch trip data when dialog opens
-                fetch(`/api/trips/${tripId}`)
-                  .then(res => res.json())
-                  .then(data => setTrip(data))
-                  .catch(console.error);
-              }
-            }}
-          />
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => router.push(`/trips/${tripId}/settings`)}
-            className="h-8 w-8"
+        {/* Removed back, edit, and settings buttons as requested */}
+      </div>
+      <div className="relative w-full h-48 sm:h-56">
+        {/* Remove the banner image and edit button rendering from here */}
+        {/* Only render the card overlay and below */}
+      </div>
+      <div className="relative mx-auto max-w-xl bg-white dark:bg-card rounded-2xl shadow-2xl px-6 pt-6 pb-6 flex flex-col gap-3 border border-border" style={{ marginTop: 0 }}>
+        <div className="flex items-center gap-3 mb-1">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="mr-2 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-[#4F46E5]"
+            aria-label="Back"
           >
-            <Settings className="h-4 w-4" />
+            <ArrowLeft className="w-6 h-6 text-gray-700 dark:text-gray-200" />
+          </button>
+          <h1 className="text-2xl font-bold text-foreground flex-1">{trip.name}</h1>
+          <span className="inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">&#10003; Confirmed</span>
+        </div>
+        <div className="flex items-center gap-2 text-muted-foreground text-base font-medium">
+          <MapPin className="w-5 h-5 text-yellow-500" />
+          <span>{trip.destination}</span>
+        </div>
+        <div className="flex items-center gap-2 text-muted-foreground text-base font-medium">
+          <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+          <span>{trip.startDate ? format(new Date(trip.startDate), 'MMM d, yyyy') : ''} - {trip.endDate ? format(new Date(trip.endDate), 'MMM d, yyyy') : ''}</span>
+        </div>
+        {/* Collaborators and Invite */}
+        <div className="flex items-center gap-4 mt-3">
+          <div className="flex -space-x-2">
+            {collaborators.slice(0, 3).map((c: any) => (
+              <Avatar key={c.userId} className="h-10 w-10 border-2 border-white shadow">
+                <AvatarImage src={c.user?.avatarUrl || ''} alt={c.user?.firstName || ''} />
+                <AvatarFallback>{c.user?.firstName?.[0]}</AvatarFallback>
+              </Avatar>
+            ))}
+            {collaborators.length > 3 && (
+              <span className="h-10 w-10 flex items-center justify-center rounded-full bg-gray-200 text-sm font-semibold border-2 border-white shadow">
+                +{collaborators.length - 3}
+              </span>
+            )}
+          </div>
+          <button
+            type="button"
+            className="flex items-center gap-2 bg-[#4F46E5] text-white font-semibold px-4 py-2 rounded-lg shadow hover:bg-[#3b36c8] transition"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 21v-2a4 4 0 00-3-3.87M5 21v-2a4 4 0 013-3.87" />
+            </svg>
+            Invite
+          </button>
+        </div>
+        <div className="flex gap-3 mt-4">
+          <Button
+            className="flex-1 h-12 text-base font-semibold rounded-lg bg-white text-black hover:bg-gray-100"
+            variant="default"
+            onClick={() => setDialogOpen(true)}
+          >
+            <span className="flex items-center gap-2"><Plus className="w-5 h-5" /> Add</span>
+          </Button>
+          <Button className="flex-1 h-12 text-base font-semibold rounded-lg bg-gray-100 text-gray-800 hover:bg-gray-200" variant="secondary">
+            <span className="flex items-center gap-2"><svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 4h16v16H4z" /><path strokeLinecap="round" strokeLinejoin="round" d="M8 8h8v8H8z" /></svg> Export Trip</span>
           </Button>
         </div>
       </div>
-      {trip.bannerUrl && (
-        <Image
-          src={trip.bannerUrl}
-          alt={trip.name}
-          width={800}
-          height={224}
-          className="w-full max-w-full h-56 object-cover rounded-md mb-6 border border-border"
-          priority
-        />
-      )}
       <div className="mb-6 flex flex-col sm:flex-row items-center justify-between w-full max-w-full gap-4">
         <div>
-          <h1 className="text-3xl font-bold mb-2">{trip.name}</h1>
-          <div className="text-lg text-gray-600 mb-1">Destination: {trip.destination}</div>
-          <div className="text-gray-500 text-sm mb-2">
-            {trip.startDate ? format(new Date(trip.startDate), 'yyyy-MM-dd') : ''}
-            {trip.endDate ? ` - ${format(new Date(trip.endDate), 'yyyy-MM-dd')}` : ''}
-          </div>
-        </div>
-        <div className="flex items-center gap-4">
           <Dialog open={dialogOpen} onOpenChange={(open) => {
             setDialogOpen(open);
             if (!open) {
@@ -434,15 +450,6 @@ export default function TripHeaderClient({ initialTrip, tripId }: { initialTrip:
               setSelectedPlaceId("");
             }
           }}>
-            <DialogTrigger asChild>
-              <Button
-                size="icon"
-                className="h-14 w-14 rounded-full shadow-lg"
-                onClick={() => setDialogOpen(true)}
-              >
-                <Plus className="h-6 w-6" />
-              </Button>
-            </DialogTrigger>
             <DialogContent className="bg-white dark:bg-card dark:text-white border border-gray-200 dark:border-gray-700">
               <DialogHeader className="dark:text-white">
                 <DialogTitle>Add New Item</DialogTitle>
