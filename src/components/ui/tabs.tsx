@@ -43,7 +43,7 @@ function TabsTrigger({
       data-slot="tabs-trigger"
       className={cn(
         "px-8 py-3 rounded-xl font-semibold text-lg transition",
-        "data-[state=active]:bg-[#4F46E5] data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:ring-2 data-[state=active]:ring-[#4F46E5]",
+        "data-[state=active]:bg-[#4F46E5] data-[state=active]:text-white",
         "data-[state=inactive]:bg-neutral-100 data-[state=inactive]:text-neutral-900 dark:data-[state=inactive]:bg-neutral-800 dark:data-[state=inactive]:text-white",
         className
       )}

@@ -24,4 +24,6 @@ export interface Accommodation {
   link?: string;
   websiteLink?: string;
   googleMapsLink?: string;
+  type?: string;
+  notes?: string;
 } 

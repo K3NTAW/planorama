@@ -74,7 +74,7 @@ export default async function TripDetailsPage(props: any) {
         </div>
       </div>
       {/* Main content container */}
-      <div className="max-w-3xl w-full mx-auto px-2 sm:px-4 md:px-6 py-6 overflow-x-hidden">
+      <div className="max-w-3xl w-full mx-auto px-2 sm:px-4 md:px-6 pt-0 pb-6 overflow-x-hidden">
         <AcceptInviteDialog tripId={tripId} />
         <TripTabs 
           tripId={tripId} 
@@ -82,7 +82,6 @@ export default async function TripDetailsPage(props: any) {
           initialAccommodationsCount={accommodations.length}
           initialFilesCount={initialFilesCount}
         />
-        <div className="h-24" />
       </div>
     </>
   );

@@ -170,7 +170,7 @@ export function CreateTripButton({ onTripCreated }: CreateTripButtonProps) {
       <DialogTrigger asChild>
         <Button>Create Trip</Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="w-5/6 max-h-[85vh] overflow-y-auto p-4">
         <DialogHeader>
           <DialogTitle>Create New Trip</DialogTitle>
           <DialogDescription>

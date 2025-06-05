@@ -6,7 +6,7 @@ import { getAblyClient } from '@/lib/ablyClient';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogDescription } from "@/components/ui/dialog";
 import { useForm } from "react-hook-form";
-import { Plus, MapPin, Bed, Loader2, Loader, CheckCircle, UploadCloud, Settings, ArrowLeft, Pencil } from "lucide-react";
+import { Plus, MapPin, Bed, Loader2, Loader, CheckCircle, UploadCloud, Settings, ArrowLeft, Pencil, User as UserIcon, UserPlus } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
@@ -376,16 +376,8 @@ export default function TripHeaderClient({ initialTrip, tripId }: { initialTrip:
         {/* Remove the banner image and edit button rendering from here */}
         {/* Only render the card overlay and below */}
       </div>
-      <div className="relative mx-auto max-w-xl bg-white dark:bg-card rounded-2xl shadow-2xl px-6 pt-6 pb-6 flex flex-col gap-3 border border-border" style={{ marginTop: 0 }}>
-        <div className="flex items-center gap-3 mb-1">
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="mr-2 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-[#4F46E5]"
-            aria-label="Back"
-          >
-            <ArrowLeft className="w-6 h-6 text-gray-700 dark:text-gray-200" />
-          </button>
+      <div className="relative mx-auto max-w-xl bg-white dark:bg-card rounded-2xl shadow-2xl px-6 pt-6 pb-6 flex flex-col gap-1.5 border border-border" style={{ marginTop: 0 }}>
+        <div className="flex items-center gap-3 mb-0.5">
           <h1 className="text-2xl font-bold text-foreground flex-1">{trip.name}</h1>
           <span className="inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">&#10003; Confirmed</span>
         </div>
@@ -398,30 +390,53 @@ export default function TripHeaderClient({ initialTrip, tripId }: { initialTrip:
           <span>{trip.startDate ? format(new Date(trip.startDate), 'MMM d, yyyy') : ''} - {trip.endDate ? format(new Date(trip.endDate), 'MMM d, yyyy') : ''}</span>
         </div>
         {/* Collaborators and Invite */}
-        <div className="flex items-center gap-4 mt-3">
-          <div className="flex -space-x-2">
-            {collaborators.slice(0, 3).map((c: any) => (
-              <Avatar key={c.userId} className="h-10 w-10 border-2 border-white shadow">
-                <AvatarImage src={c.user?.avatarUrl || ''} alt={c.user?.firstName || ''} />
-                <AvatarFallback>{c.user?.firstName?.[0]}</AvatarFallback>
-              </Avatar>
-            ))}
-            {collaborators.length > 3 && (
-              <span className="h-10 w-10 flex items-center justify-center rounded-full bg-gray-200 text-sm font-semibold border-2 border-white shadow">
-                +{collaborators.length - 3}
-              </span>
-            )}
-          </div>
-          <button
-            type="button"
-            className="flex items-center gap-2 bg-[#4F46E5] text-white font-semibold px-4 py-2 rounded-lg shadow hover:bg-[#3b36c8] transition"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 21v-2a4 4 0 00-3-3.87M5 21v-2a4 4 0 013-3.87" />
-            </svg>
-            Invite
-          </button>
+        <div className="mt-3">
+          {collaborators.length > 0 ? (
+            // STATE 1: Collaborators EXIST
+            <div className="flex items-center gap-4">
+              <div className="flex -space-x-2"> {/* Avatars */}
+                {collaborators.slice(0, 3).map((c: any) => (
+                  <Avatar key={c.userId} className="h-10 w-10 border-2 border-white shadow">
+                    <AvatarImage src={c.user?.avatarUrl || ''} alt={c.user?.firstName || ''} />
+                    <AvatarFallback>{c.user?.firstName?.[0]}</AvatarFallback>
+                  </Avatar>
+                ))}
+                {collaborators.length > 3 && (
+                  <span className="h-10 w-10 flex items-center justify-center rounded-full bg-gray-200 text-sm font-semibold border-2 border-white shadow">
+                    +{collaborators.length - 3}
+                  </span>
+                )}
+              </div>
+              {/* Invite Button when collaborators exist */}
+              <button
+                type="button"
+                className="flex items-center gap-2 bg-[#4F46E5] text-white font-semibold px-4 py-2 rounded-lg shadow hover:bg-[#3b36c8] transition"
+              >
+                <UserPlus className="w-5 h-5" />
+                Invite
+              </button>
+            </div>
+          ) : (
+            // STATE 2: NO Collaborators
+            <div className="flex items-center justify-between"> {/* Key change: items-center and justify-between */}
+              <div className="flex items-center gap-2"> {/* Placeholder Avatar + Text */}
+                <Avatar className="h-10 w-10 border-2 border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800">
+                  <AvatarFallback>
+                    <UserIcon className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                  </AvatarFallback>
+                </Avatar>
+                <span className="text-muted-foreground">0 collaborators</span>
+              </div>
+              {/* Invite Button when NO collaborators exist - styled the same as the other invite button */}
+              <button
+                type="button"
+                className="flex items-center gap-2 bg-[#4F46E5] text-white font-semibold px-4 py-2 rounded-lg shadow hover:bg-[#3b36c8] transition"
+              >
+                <UserPlus className="w-5 h-5" />
+                Invite
+              </button>
+            </div>
+          )}
         </div>
         <div className="flex gap-3 mt-4">
           <Button

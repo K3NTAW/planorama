@@ -3,7 +3,7 @@ import { useEffect, useState, useTransition, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
-import { UploadCloud, Loader, CheckCircle, File as FileIcon, ExternalLink } from "lucide-react";
+import { UploadCloud, Loader, CheckCircle, File as FileIcon, ExternalLink, MoreVertical, Utensils, Landmark, Trees, Bed, Coffee, MapPin } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { uploadToCloudinary } from "@/lib/cloudinary";
@@ -14,6 +14,13 @@ import { getAblyClient } from '@/lib/ablyClient';
 import { useToast } from "@/components/ui/use-toast";
 import { useTheme } from "next-themes";
 import { Place } from "@/types/trip";
+import { format } from 'date-fns';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface TripPlacesState {
   placesByTrip: Record<string, Place[]>;
@@ -74,6 +81,17 @@ const PLACE_TYPES = [
   { value: "hotel", label: "Hotel" },
   { value: "other", label: "Other" },
 ];
+
+// Add placeTypeDetails and defaultPlaceDetail back
+const placeTypeDetails: { [key: string]: { icon: React.ElementType, color: string } } = {
+  restaurant: { icon: Utensils, color: "bg-orange-500" },
+  cafe: { icon: Coffee, color: "bg-yellow-600" },
+  museum: { icon: Landmark, color: "bg-indigo-500" },
+  park: { icon: Trees, color: "bg-green-500" },
+  hotel: { icon: Bed, color: "bg-blue-500" },
+  other: { icon: MapPin, color: "bg-gray-500" },
+};
+const defaultPlaceDetail = { icon: MapPin, color: "bg-gray-500" };
 
 interface TripPlacesProps {
   tripId: string;
@@ -251,34 +269,106 @@ export function TripPlaces({ tripId, inDialog = false, onSuccess }: TripPlacesPr
     setEditDialogOpen(false);
   };
 
-  if (loading) {
+  if (loading && places.length === 0) {
     return <PlacesSkeleton />;
   }
 
   return (
     <div className="relative">
-      <div className="space-y-4">
-        {places.length === 0 ? (
-          <div className="text-gray-500">No places added yet.</div>
+      <div className="space-y-5">
+        {places.length === 0 && !loading ? (
+          <div className="text-center py-10 text-muted-foreground">
+            <MapPin className="mx-auto h-12 w-12 text-gray-400" />
+            <h3 className="mt-2 text-sm font-medium">No places added yet.</h3>
+            <p className="mt-1 text-sm text-gray-500">Add places to your trip to see them here.</p>
+          </div>
         ) : (
-          places.map(place => (
-            <div key={place.id} className="border rounded p-4 bg-white dark:bg-card flex justify-between items-start gap-4 relative">
-              <div className="flex-1">
-                <div className="font-semibold text-lg">{place.name} <span className="text-sm text-gray-400">({place.type})</span></div>
-                {place.address && <div className="text-gray-600">{place.address}</div>}
-                {place.link && <a href={place.link} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">Link</a>}
-                {place.notes && <div className="text-gray-500 text-sm mt-1">{place.notes}</div>}
-                {place.date && <div className="text-gray-500 text-sm">Date: {new Date(place.date).toISOString().slice(0, 10)}</div>}
+          places.map((place, index) => {
+            const typeDetail = (place.type && placeTypeDetails[place.type.toLowerCase()]) || defaultPlaceDetail;
+            const IconComponent = typeDetail.icon;
+            
+            let timeDisplay = "";
+            if (place.date) {
+              try {
+                const dateObj = new Date(place.date);
+                if (!isNaN(dateObj.getTime())) {
+                  if (dateObj.getHours() !== 0 || dateObj.getMinutes() !== 0 || dateObj.getSeconds() !== 0) {
+                    timeDisplay = format(dateObj, 'MMM d, p');
+                  } else {
+                    timeDisplay = format(dateObj, 'MMM d');
+                  }
+                }
+              } catch (e) {
+                // console.error("Error formatting date:", e); 
+              }
+            }
+
+            return (
+              <div key={place.id} className="flex items-start gap-x-4 relative">
+                <div className="relative last:after:hidden after:absolute after:top-10 after:bottom-0 after:start-[1.125rem] after:w-px after:-translate-x-1/2 after:bg-gray-300 dark:after:bg-slate-700">
+                  <div className="relative z-10 w-9 h-9 flex items-center justify-center">
+                    <div className={cn("w-full h-full rounded-full flex items-center justify-center text-white", typeDetail.color || defaultPlaceDetail.color)}>
+                      <IconComponent className="w-5 h-5" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grow bg-card shadow-lg rounded-lg p-4 pr-10 relative min-w-0 flex-1 min-h-[120px]">
+                  <div className="absolute top-3 right-2.5 z-20">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0 text-muted-foreground hover:bg-muted/50">
+                          <MoreVertical className="h-5 w-5" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="bg-background border-border shadow-lg">
+                        <DropdownMenuItem onClick={() => handleEdit(place)} className="hover:bg-muted/50 focus:bg-muted/50">
+                          Edit Place
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDelete(place.id)} className="text-red-600 dark:text-red-500 hover:bg-red-500/10 focus:bg-red-500/10 focus:text-red-600 dark:focus:text-red-500">
+                          Delete Place
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+
+                  <div className="flex flex-col">
+                    {timeDisplay && (
+                      <p className="text-sm font-medium text-blue-600 dark:text-blue-500 mb-0.5">{timeDisplay}</p>
+                    )}
+                    <h3 className="text-lg font-semibold text-foreground mb-1.5 leading-tight pr-6">
+                      {place.name}
+                    </h3>
+                    {place.notes && (
+                      <p className="text-sm text-muted-foreground mb-2.5 leading-relaxed">
+                        {place.notes}
+                      </p>
+                    )}
+                    {place.address && (
+                      <div className="flex items-center text-xs text-muted-foreground mt-1">
+                        <MapPin className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
+                        <span>{place.address}</span>
+                      </div>
+                    )}
+                    {place.link && (
+                      <a 
+                        href={place.link} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="text-xs text-primary hover:underline mt-2 inline-flex items-center gap-1"
+                      >
+                        Visit website <ExternalLink className="w-3 h-3"/>
+                      </a>
+                    )}
+                  </div>
+                  
+                  <div className="absolute bottom-3 right-3 z-10">
+                     <PlaceFileButton placeId={place.id} tripId={tripId} />
+                  </div>
+                </div>
               </div>
-              <div className="flex flex-col gap-2">
-                <Button size="sm" variant="outline" onClick={() => handleEdit(place)}>Edit</Button>
-                <Button variant="destructive" size="sm" onClick={() => handleDelete(place.id)}>Delete</Button>
-              </div>
-              <div className="absolute bottom-2 right-2 z-10">
-                <PlaceFileButton placeId={place.id} tripId={tripId} />
-              </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
       <Dialog open={editDialogOpen} onOpenChange={open => { if (!open) handleEditDialogClose(); }}>
@@ -417,9 +507,19 @@ function PlaceFileButton({ placeId, tripId }: { placeId: string; tripId: string 
 
 function PlacesSkeleton() {
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {[...Array(3)].map((_, i) => (
-        <div key={i} className="animate-pulse bg-muted rounded p-4 h-20" />
+        <div key={i} className="flex items-start gap-x-4 relative">
+          <div className="relative last:after:hidden after:absolute after:top-10 after:bottom-0 after:start-[1.125rem] after:w-px after:-translate-x-1/2 after:bg-gray-200 dark:after:bg-slate-700">
+            <div className="w-9 h-9 rounded-full bg-muted animate-pulse"></div>
+          </div>
+          <div className="grow bg-muted/50 dark:bg-slate-800/50 shadow-lg rounded-lg p-4 pr-10 animate-pulse min-w-0 flex-1 min-h-[120px]">
+            <div className="h-4 bg-muted-foreground/20 rounded w-1/3 mb-2"></div>
+            <div className="h-5 bg-muted-foreground/30 rounded w-3/4 mb-2.5"></div>
+            <div className="h-10 bg-muted-foreground/20 rounded w-full mb-3"></div>
+            <div className="h-3 bg-muted-foreground/20 rounded w-1/2 mt-1"></div>
+          </div>
+        </div>
       ))}
     </div>
   );

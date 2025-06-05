@@ -198,10 +198,10 @@ export function TripTabs({ tripId, initialPlacesCount, initialAccommodationsCoun
   return (
     <Tabs defaultValue="places" className="w-full max-w-full">
       <TabsList className="mb-4 w-full max-w-full overflow-x-auto">
-        {showPlacesTab && <TabsTrigger value="places">Places</TabsTrigger>}
-        {showAccommodationTab && <TabsTrigger value="accommodation">Accommodation</TabsTrigger>}
-        {showFilesTab && <TabsTrigger value="files">Files</TabsTrigger>}
-        {showMapTab && <TabsTrigger value="map">Map</TabsTrigger>}
+        {showPlacesTab && <TabsTrigger value="places" className="px-4 py-2 text-sm">Places</TabsTrigger>}
+        {showAccommodationTab && <TabsTrigger value="accommodation" className="px-4 py-2 text-sm">Accommodation</TabsTrigger>}
+        {showFilesTab && <TabsTrigger value="files" className="px-4 py-2 text-sm">Files</TabsTrigger>}
+        {showMapTab && <TabsTrigger value="map" className="px-4 py-2 text-sm">Map</TabsTrigger>}
       </TabsList>
       {showPlacesTab && (
         <TabsContent value="places">

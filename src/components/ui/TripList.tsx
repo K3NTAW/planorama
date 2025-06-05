@@ -268,6 +268,7 @@ export function TripList({ userId, userName }: { userId: string, userName?: stri
           })
         )}
       </div>
+      <div className="h-24" /> {/* Spacer for bottom navigation */}
     </div>
   );
 }

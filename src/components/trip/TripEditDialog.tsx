@@ -160,7 +160,7 @@ export function TripEditDialog({ tripId, onTripUpdated, onOpenChange }: TripEdit
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 bg-red-500 shadow-lg"
+          className="h-8 w-8 bg-black/50"
         >
           <Pencil className="h-4 w-4" />
         </Button>
