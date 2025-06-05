@@ -19,7 +19,8 @@ import {
   MoreVertical,
   ExternalLink,
   CalendarDays,
-  Loader
+  Loader,
+  Briefcase
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -27,6 +28,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { z } from "zod";
 
 interface TripAccommodationsState {
   accommodationsByTrip: Record<string, Accommodation[]>;
@@ -115,14 +117,14 @@ interface AccommodationForm extends Omit<Accommodation, 'id'> {
 }
 
 // Define accommodationTypeDetails
-const accommodationTypeDetails: { [key: string]: { icon: React.ElementType, color: string, label: string } } = {
+export const accommodationTypeDetails: { [key: string]: { icon: React.ElementType, color: string, label: string } } = {
   hotel: { icon: Bed, color: "bg-blue-500", label: "Hotel" },
-  airbnb: { icon: Home, color: "bg-rose-500", label: "Airbnb" },
+  airbnb: { icon: Home, color: "bg-red-500", label: "Airbnb" },
   hostel: { icon: HotelIcon, color: "bg-purple-500", label: "Hostel" },
-  apartment: { icon: Building, color: "bg-teal-500", label: "Apartment" },
-  other: { icon: MapPin, color: "bg-gray-500", label: "Other" },
+  apartment: { icon: Building, color: "bg-purple-500", label: "Apartment" },
+  other: { icon: Briefcase, color: "bg-gray-500", label: "Other" },
 };
-const defaultAccommodationDetail = accommodationTypeDetails.other;
+export const defaultAccommodationDetail = { icon: Briefcase, color: "bg-gray-500", label: "Other" };
 
 // For the type dropdown in forms
 const ACCOMMODATION_TYPES = Object.entries(accommodationTypeDetails).map(([value, { label }]) => ({ value, label }));
@@ -343,7 +345,7 @@ export function TripAccommodations({ tripId, inDialog = false, onSuccess }: Trip
                   </div>
                 </div>
 
-                <div className="grow bg-card shadow-lg rounded-lg p-4 pr-10 relative min-w-0 flex-1 min-h-[150px]">
+                <div className="grow bg-card shadow-lg rounded-lg p-4 pb-8 pr-10 relative min-w-0 flex-1 min-h-[150px]">
                   <div className="absolute top-3 right-2.5 z-20">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -519,4 +521,9 @@ function AccommodationsSkeleton() {
       ))}
     </div>
   );
-} 
+}
+
+const formSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  // ... existing code ...
+}); 

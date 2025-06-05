@@ -21,6 +21,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { z } from "zod";
 
 interface TripPlacesState {
   placesByTrip: Record<string, Place[]>;
@@ -82,8 +83,7 @@ const PLACE_TYPES = [
   { value: "other", label: "Other" },
 ];
 
-// Add placeTypeDetails and defaultPlaceDetail back
-const placeTypeDetails: { [key: string]: { icon: React.ElementType, color: string } } = {
+export const placeTypeDetails: { [key: string]: { icon: React.ElementType, color: string } } = {
   restaurant: { icon: Utensils, color: "bg-orange-500" },
   cafe: { icon: Coffee, color: "bg-yellow-600" },
   museum: { icon: Landmark, color: "bg-indigo-500" },
@@ -91,7 +91,13 @@ const placeTypeDetails: { [key: string]: { icon: React.ElementType, color: strin
   hotel: { icon: Bed, color: "bg-blue-500" },
   other: { icon: MapPin, color: "bg-gray-500" },
 };
-const defaultPlaceDetail = { icon: MapPin, color: "bg-gray-500" };
+
+export const defaultPlaceDetail = { icon: MapPin, color: "bg-gray-500" };
+
+const formSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  // ... existing code ...
+});
 
 interface TripPlacesProps {
   tripId: string;
@@ -313,7 +319,7 @@ export function TripPlaces({ tripId, inDialog = false, onSuccess }: TripPlacesPr
                   </div>
                 </div>
 
-                <div className="grow bg-card shadow-lg rounded-lg p-4 pr-10 relative min-w-0 flex-1 min-h-[120px]">
+                <div className="grow bg-card shadow-lg rounded-lg p-4 pb-8 pr-14 relative min-w-0 flex-1 min-h-[120px]">
                   <div className="absolute top-3 right-2.5 z-20">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>

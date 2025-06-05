@@ -20,6 +20,8 @@ export interface Accommodation {
   checkIn: string;
   checkOut: string;
   link?: string;
+  type?: string;
+  notes?: string;
   latitude?: number | null;
   longitude?: number | null;
   tripId?: string;
