@@ -1,0 +1,45 @@
+\documentclass{article}
+
+% --- PACKAGES ---
+\usepackage{fontspec}
+\usepackage{geometry}
+\usepackage[colorlinks=true, urlcolor=blue, linkcolor=blue]{hyperref}
+\usepackage{graphicx}
+\usepackage{longtable}
+\usepackage{booktabs}
+
+% --- GEOMETRY ---
+\geometry{a4paper, margin=2.5cm}
+
+% --- FONTS ---
+% Set the main font for the document (body text, headings)
+\setmainfont{Inter}[Path=./docs/fonts/inter-fonts/extras/otf/]
+\setsansfont{Inter}[Path=./docs/fonts/inter-fonts/extras/otf/]
+
+% Set the monospace font (for code blocks)
+\setmonofont{JetBrains Mono}[Path=./docs/fonts/fonts/ttf/]
+
+% --- PANDOC VARIABLES ---
+$if(title)$
+  \title{$title$}
+  \author{$for(author)$$author$$sep$, $endfor$}
+  \date{$date$}
+$endif$
+
+% --- DOCUMENT ---
+\begin{document}
+
+$if(title)$
+  \maketitle
+$endif$
+
+$if(toc)$
+  {
+    \hypersetup{linkcolor=black}
+    \tableofcontents
+  }
+$endif$
+
+$body$
+
+\end{document} 

@@ -1,0 +1,623 @@
+\documentclass{article}
+
+% --- PACKAGES ---
+\usepackage{fontspec}
+\usepackage{geometry}
+\usepackage[colorlinks=true, urlcolor=blue, linkcolor=blue]{hyperref}
+\usepackage{graphicx}
+\usepackage{longtable}
+\usepackage{booktabs}
+
+% --- GEOMETRY ---
+\geometry{a4paper, margin=2.5cm}
+
+% --- FONTS ---
+% Set the main font for the document (body text, headings)
+\setmainfont{Inter}[Path=./docs/fonts/inter-fonts/extras/otf/]
+\setsansfont{Inter}[Path=./docs/fonts/inter-fonts/extras/otf/]
+
+% Set the monospace font (for code blocks)
+\setmonofont{JetBrains Mono}[Path=./docs/fonts/fonts/ttf/]
+
+% --- PANDOC VARIABLES ---
+
+% --- DOCUMENT ---
+\begin{document}
+
+
+  {
+    \hypersetup{linkcolor=black}
+    \tableofcontents
+  }
+
+\section{Planorama Business Plan}\label{planorama-business-plan}
+
+\subsection{Inhaltsverzeichnis}\label{inhaltsverzeichnis}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \hyperref[innovative-idee-planorama]{Innovative Idee: Planorama}
+\item
+  \hyperref[business-model-canvas-planorama]{Business Model Canvas:
+  Planorama}
+\item
+  \hyperref[st-galler-business-model-navigator-planorama]{St.~Galler
+  Business Model Navigator: Planorama}
+\item
+  \hyperref[design-sprint-planorama]{Design Sprint: Planorama}
+\item
+  \hyperref[innovatives-framework-nextjs]{Innovatives Framework:
+  Next.js}
+\item
+  \hyperref[innovationen-bewerten-pestel-analyse-fuxfcr-planorama]{Innovationen
+  bewerten: PESTEL-Analyse für Planorama}
+\item
+  \hyperref[stakeholder-analyse-planorama]{Stakeholder-Analyse:
+  Planorama}
+\item
+  \hyperref[marktforschung-planorama]{Marktforschung: Planorama}
+\item
+  \hyperref[erfolgsmessung-planorama]{Erfolgsmessung: Planorama}
+\item
+  \hyperref[risikoanalyse-planorama]{Risikoanalyse: Planorama}
+\item
+  \hyperref[pruxe4sentationstechnik-pitch]{Präsentationstechnik: Pitch}
+\end{enumerate}
+
+\newpage
+
+\section{Innovative Idee: Planorama}\label{innovative-idee-planorama}
+
+\textbf{Planorama} ist eine innovative Plattform zur Urlaubsplanung, die
+es Nutzern ermöglicht, Reisen kollaborativ zu organisieren, Inspiration
+zu finden und alle logistischen Aspekte an einem Ort zu verwalten.
+
+\subsection{Zweck}\label{zweck}
+
+Planorama hilft Einzelpersonen und Gruppen, Urlaube effizient zu planen,
+indem es Tools für die gemeinsame Planung, Aufgabenverteilung und
+Inspiration bietet.
+
+\subsection{Zielgruppe}\label{zielgruppe}
+
+\begin{itemize}
+\tightlist
+\item
+  Familien
+\item
+  Freundesgruppen
+\item
+  Paare
+\item
+  Einzelreisende
+\end{itemize}
+
+\subsection{Innovationsaspekt}\label{innovationsaspekt}
+
+\begin{itemize}
+\tightlist
+\item
+  Kollaborative Planung in Echtzeit
+\item
+  Integration von Inspiration, Buchung und Aufgabenmanagement
+\item
+  Intuitive Benutzeroberfläche
+\item
+  Personalisierte Empfehlungen basierend auf Nutzerpräferenzen
+\end{itemize}
+
+\newpage
+
+\section{Business Model Canvas:
+Planorama}\label{business-model-canvas-planorama}
+
+\subsection{Kundensegmente}\label{kundensegmente}
+
+\begin{itemize}
+\tightlist
+\item
+  Familien, Freundesgruppen, Paare, Einzelreisende
+\end{itemize}
+
+\subsection{Wertangebote}\label{wertangebote}
+
+\begin{itemize}
+\tightlist
+\item
+  Kollaborative Urlaubsplanung
+\item
+  Inspiration und Empfehlungen
+\item
+  Zentrale Verwaltung aller Reisedaten
+\end{itemize}
+
+\subsection{Kanäle}\label{kanuxe4le}
+
+\begin{itemize}
+\tightlist
+\item
+  Web-App
+\item
+  Mobile App
+\end{itemize}
+
+\subsection{Kundenbeziehungen}\label{kundenbeziehungen}
+
+\begin{itemize}
+\tightlist
+\item
+  Personalisierter Support
+\item
+  Community-Features
+\end{itemize}
+
+\subsection{Einnahmequellen}\label{einnahmequellen}
+
+\begin{itemize}
+\tightlist
+\item
+  Freemium-Modell (Basis kostenlos, Premium-Features kostenpflichtig)
+\item
+  Affiliate-Links für Buchungen
+\end{itemize}
+
+\subsection{Schlüsselressourcen}\label{schluxfcsselressourcen}
+
+\begin{itemize}
+\tightlist
+\item
+  Plattform/Software
+\item
+  Partnerschaften mit Reiseanbietern
+\end{itemize}
+
+\subsection{Schlüsselaktivitäten}\label{schluxfcsselaktivituxe4ten}
+
+\begin{itemize}
+\tightlist
+\item
+  Entwicklung und Wartung der Plattform
+\item
+  Marketing
+\item
+  Kundenservice
+\end{itemize}
+
+\subsection{Schlüsselpartner}\label{schluxfcsselpartner}
+
+\begin{itemize}
+\tightlist
+\item
+  Reiseanbieter
+\item
+  Buchungsplattformen
+\end{itemize}
+
+\subsection{Kostenstruktur}\label{kostenstruktur}
+
+\begin{itemize}
+\tightlist
+\item
+  Entwicklungskosten
+\item
+  Marketing
+\item
+  Support
+\end{itemize}
+
+\begin{figure}
+\centering
+\pandocbounded{\includegraphics[keepaspectratio,alt={Business Model Canvas}]{docs/business-model-canvas-planorama.png}}
+\caption{Business Model Canvas}
+\end{figure}
+
+\newpage
+
+\section{St.~Galler Business Model Navigator:
+Planorama}\label{st.-galler-business-model-navigator-planorama}
+
+\subsection{Gewähltes Modell:
+Freemium}\label{gewuxe4hltes-modell-freemium}
+
+Planorama nutzt das Freemium-Modell, bei dem die Grundfunktionen
+kostenlos angeboten werden und Premium-Features gegen Bezahlung
+freigeschaltet werden können.
+
+\subsubsection{Begründung}\label{begruxfcndung}
+
+\begin{itemize}
+\tightlist
+\item
+  Niedrige Einstiegshürde für neue Nutzer
+\item
+  Möglichkeit, durch Premium-Features zusätzliche Einnahmen zu
+  generieren
+\item
+  Nutzer können die Plattform risikofrei testen und bei Gefallen
+  upgraden
+\end{itemize}
+
+\begin{figure}
+\centering
+\pandocbounded{\includegraphics[keepaspectratio,alt={St.~Galler Business Model}]{docs/stgaller-business-model-planorama.png}}
+\caption{St.~Galler Business Model}
+\end{figure}
+
+\newpage
+
+\section{Design Sprint: Planorama}\label{design-sprint-planorama}
+
+\subsection{Ziel}\label{ziel}
+
+Die wichtigsten Annahmen und Funktionen von Planorama schnell
+validieren.
+
+\subsection{Ablauf}\label{ablauf}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{Verstehen:} Zielgruppe und deren Bedürfnisse analysieren
+\item
+  \textbf{Skizzieren:} Lösungsansätze für die Urlaubsplanung entwerfen
+\item
+  \textbf{Entscheiden:} Beste Ideen auswählen
+\item
+  \textbf{Prototypen:} Interaktiven Prototypen der Plattform erstellen
+\item
+  \textbf{Testen:} Prototyp mit echten Nutzern testen und Feedback
+  einholen
+\end{enumerate}
+
+\subsection{Ergebnis}\label{ergebnis}
+
+\begin{itemize}
+\tightlist
+\item
+  Erkenntnisse über Nutzerbedürfnisse
+\item
+  Validierung der wichtigsten Funktionen
+\item
+  Iterationsgrundlage für die Weiterentwicklung
+\end{itemize}
+
+\begin{figure}
+\centering
+\pandocbounded{\includegraphics[keepaspectratio,alt={Planorama Design}]{docs/planorma-design.png}}
+\caption{Planorama Design}
+\end{figure}
+
+\newpage
+
+\section{Innovatives Framework:
+Next.js}\label{innovatives-framework-next.js}
+
+\subsection{Auswahl}\label{auswahl}
+
+Für die Umsetzung von Planorama wurde das Framework \textbf{Next.js}
+gewählt.
+
+\subsection{Begründung}\label{begruxfcndung-1}
+
+\begin{itemize}
+\tightlist
+\item
+  Moderne, performante Webentwicklung
+\item
+  Server-Side Rendering für schnelle Ladezeiten
+\item
+  Gute Integration mit React
+\item
+  Umfangreiche Community und viele Ressourcen
+\item
+  Skalierbarkeit für zukünftige Erweiterungen
+\end{itemize}
+
+\newpage
+
+\section{Innovationen bewerten: PESTEL-Analyse für
+Planorama}\label{innovationen-bewerten-pestel-analyse-fuxfcr-planorama}
+
+\subsection{Politisch}\label{politisch}
+
+\begin{itemize}
+\tightlist
+\item
+  Datenschutzbestimmungen für Nutzerdaten
+\end{itemize}
+
+\subsection{Wirtschaftlich}\label{wirtschaftlich}
+
+\begin{itemize}
+\tightlist
+\item
+  Wachsender Markt für Online-Reiseplanung
+\item
+  Potenzial für Affiliate-Einnahmen
+\end{itemize}
+
+\subsection{Sozial}\label{sozial}
+
+\begin{itemize}
+\tightlist
+\item
+  Trend zu individuellen und Gruppenreisen
+\item
+  Steigende Nutzung digitaler Tools
+\end{itemize}
+
+\subsection{Technologisch}\label{technologisch}
+
+\begin{itemize}
+\tightlist
+\item
+  Fortschritte bei Web- und Mobile-Technologien
+\end{itemize}
+
+\subsection{Umwelt}\label{umwelt}
+
+\begin{itemize}
+\tightlist
+\item
+  Möglichkeit, nachhaltige Reiseoptionen zu integrieren
+\end{itemize}
+
+\subsection{Rechtlich}\label{rechtlich}
+
+\begin{itemize}
+\tightlist
+\item
+  Einhaltung von DSGVO und anderen Datenschutzgesetzen
+\end{itemize}
+
+\newpage
+
+\section{Stakeholder-Analyse:
+Planorama}\label{stakeholder-analyse-planorama}
+
+\subsection{Methode:
+Stakeholder-Matrix}\label{methode-stakeholder-matrix}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2625}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2375}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.1750}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.3250}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Stakeholder
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Interesse
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Einfluss
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Massnahmen
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Nutzer & Hoch & Hoch & Feedback einholen, Support \\
+Reiseanbieter & Mittel & Mittel & Partnerschaften, API \\
+Investoren & Hoch & Hoch & Transparente Kommunikation \\
+Entwicklerteam & Hoch & Hoch & Agile Entwicklung \\
+Gesetzgeber & Niedrig & Mittel & Einhaltung der Gesetze \\
+\end{longtable}
+
+\subsection{Beispiel
+Stakeholder-Kommunikation}\label{beispiel-stakeholder-kommunikation}
+
+\textbf{Beispiel-E-Mail an Reiseanbieter:}
+
+Betreff: Partnerschaftsanfrage -- Planorama, die neue Plattform für
+Urlaubsplanung
+
+Sehr geehrte Damen und Herren,
+
+wir entwickeln mit Planorama eine innovative Plattform, die Gruppen und
+Einzelpersonen bei der Urlaubsplanung unterstützt. Wir sind überzeugt,
+dass eine Partnerschaft mit Ihnen für beide Seiten Mehrwert schaffen
+kann -- z.B. durch die Integration Ihrer Angebote in unsere
+Buchungsstrecke.
+
+Gerne stellen wir Ihnen unser Konzept in einem kurzen Gespräch vor und
+freuen uns auf Ihre Rückmeldung.
+
+Mit freundlichen Grüßen\\
+Das Planorama-Team
+
+\newpage
+
+\section{Marktforschung: Planorama}\label{marktforschung-planorama}
+
+\subsection{Primärforschung}\label{primuxe4rforschung}
+
+\begin{itemize}
+\tightlist
+\item
+  Online-Umfrage unter potenziellen Nutzern zu Reisegewohnheiten und
+  Planungsproblemen
+\item
+  Interviews mit Reisegruppen
+\end{itemize}
+
+\subsubsection{Beispiel-Umfragefragen}\label{beispiel-umfragefragen}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Wie oft planen Sie Urlaubsreisen pro Jahr?
+\item
+  Mit wem planen Sie Ihre Reisen meistens? (Alleine, Familie, Freunde,
+  Partner/in)
+\item
+  Welche Tools oder Apps nutzen Sie aktuell zur Urlaubsplanung?
+\item
+  Was sind die größten Herausforderungen bei der Planung von
+  Gruppenreisen?
+\item
+  Wie wichtig sind Ihnen Inspirationen (z.B. Reisevorschläge,
+  Aktivitäten) bei der Planung?
+\item
+  Welche Funktionen würden Sie sich von einer Urlaubsplanungs-App
+  wünschen?
+\item
+  Wie bewerten Sie die Übersichtlichkeit und Benutzerfreundlichkeit
+  Ihrer aktuellen Tools? (Skala 1-5)
+\item
+  Wären Sie bereit, für Premium-Funktionen einer
+  Urlaubsplanungsplattform zu bezahlen?
+\item
+  Wie wichtig ist Ihnen der Datenschutz bei der Nutzung solcher
+  Plattformen?
+\item
+  Haben Sie schon einmal eine Reise abgebrochen oder umgeplant, weil die
+  Organisation zu kompliziert war?
+\end{enumerate}
+
+\subsection{Sekundärforschung}\label{sekunduxe4rforschung}
+
+\begin{itemize}
+\tightlist
+\item
+  Analyse von Marktstudien zum Online-Reisemarkt
+\item
+  Recherche zu bestehenden Lösungen und deren Schwächen
+\end{itemize}
+
+\newpage
+
+\section{Erfolgsmessung: Planorama}\label{erfolgsmessung-planorama}
+
+\subsection{Methode: Leistungskennzahlen
+(KPIs)}\label{methode-leistungskennzahlen-kpis}
+
+\begin{itemize}
+\tightlist
+\item
+  Anzahl aktiver Nutzer
+\item
+  Anzahl erstellter Reisepläne
+\item
+  Nutzerzufriedenheit (z.B. durch Umfragen)
+\item
+  Conversion-Rate von kostenlosen zu zahlenden Nutzern
+\end{itemize}
+
+\subsubsection{Beispiel-KPIs}\label{beispiel-kpis}
+
+\begin{itemize}
+\tightlist
+\item
+  1.000 aktive Nutzer im ersten Quartal
+\item
+  100 erstellte Gruppenreisen pro Monat
+\item
+  80\% positive Bewertungen im App Store
+\item
+  10\% Conversion-Rate von Free zu Premium
+\end{itemize}
+
+\newpage
+
+\section{Risikoanalyse: Planorama}\label{risikoanalyse-planorama}
+
+\subsection{Methode: SWOT-Analyse}\label{methode-swot-analyse}
+
+\subsubsection{Stärken}\label{stuxe4rken}
+
+\begin{itemize}
+\tightlist
+\item
+  Innovative, kollaborative Plattform
+\item
+  Einfache Bedienung
+\item
+  Kollaborative Planung in Echtzeit
+\item
+  Integration von Inspiration, Buchung und Aufgabenmanagement
+\end{itemize}
+
+\subsubsection{Schwächen}\label{schwuxe4chen}
+
+\begin{itemize}
+\tightlist
+\item
+  Abhängigkeit von Partnern
+\item
+  Markteintrittsbarrieren
+\item
+  Noch geringe Markenbekanntheit
+\item
+  Abhängigkeit von Partnerintegrationen
+\end{itemize}
+
+\subsubsection{Chancen}\label{chancen}
+
+\begin{itemize}
+\tightlist
+\item
+  Wachsende Nachfrage nach digitalen Planungstools
+\item
+  Erweiterung um neue Features
+\item
+  Kooperationen mit Reiseanbietern
+\item
+  Trend zu individuellen Gruppenreisen
+\end{itemize}
+
+\subsubsection{Risiken}\label{risiken}
+
+\begin{itemize}
+\tightlist
+\item
+  Starke Konkurrenz
+\item
+  Datenschutzanforderungen
+\item
+  Datenschutzprobleme könnten Vertrauen beeinträchtigen
+\item
+  Konkurrenz durch etablierte Plattformen
+\end{itemize}
+
+\newpage
+
+\section{Präsentationstechnik:
+Pitch}\label{pruxe4sentationstechnik-pitch}
+
+\subsection{Auswahl}\label{auswahl-1}
+
+Für die Präsentation von Planorama wird die Pitch-Technik gewählt.
+
+\subsection{Beispiel-Pitch}\label{beispiel-pitch}
+
+„Stellen Sie sich vor, Sie möchten mit Freunden oder Familie eine Reise
+planen -- doch die Organisation wird schnell chaotisch: endlose
+Chatverläufe, unübersichtliche Listen, vergessene Aufgaben.
+
+Planorama löst dieses Problem! Unsere Plattform vereint Inspiration,
+Planung und Aufgabenmanagement an einem Ort. Sie können gemeinsam
+Reiseziele entdecken, Aufgaben verteilen, Unterkünfte buchen und alles
+übersichtlich im Team organisieren -- egal ob am Desktop oder mobil.
+
+Mit Planorama wird die Urlaubsplanung endlich einfach, transparent und
+macht Spaß. Testen Sie kostenlos die Basisversion -- und entdecken Sie,
+wie entspannt Reiseplanung sein kann!{\kern0pt}``
+
+\subsection{Begründung}\label{begruxfcndung-2}
+
+\begin{itemize}
+\tightlist
+\item
+  Kompakte und überzeugende Darstellung der Idee
+\item
+  Fokus auf die wichtigsten Vorteile und Alleinstellungsmerkmale
+\item
+  Geeignet für Investoren, Partner und Nutzer
+\end{itemize}
+
+\end{document} 

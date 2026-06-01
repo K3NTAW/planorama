@@ -37,3 +37,5 @@
 - Entwicklungskosten
 - Marketing
 - Support 
+
+business-model-canvas-planorma.png

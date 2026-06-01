@@ -8,3 +8,5 @@ Planorama nutzt das Freemium-Modell, bei dem die Grundfunktionen kostenlos angeb
 - Niedrige Einstiegshürde für neue Nutzer
 - Möglichkeit, durch Premium-Features zusätzliche Einnahmen zu generieren
 - Nutzer können die Plattform risikofrei testen und bei Gefallen upgraden 
+
+stgaller-business-model-planorama.png

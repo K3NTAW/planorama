@@ -2,7 +2,7 @@
 
 ## Methode: Stakeholder-Matrix
 
-| Stakeholder         | Interesse         | Einfluss     | Maßnahmen                |
+| Stakeholder         | Interesse         | Einfluss     | Massnahmen                |
 |---------------------|-------------------|--------------|--------------------------|
 | Nutzer              | Hoch              | Hoch         | Feedback einholen, Support|
 | Reiseanbieter       | Mittel            | Mittel       | Partnerschaften, API     |

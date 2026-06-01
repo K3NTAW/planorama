@@ -14,3 +14,5 @@ Die wichtigsten Annahmen und Funktionen von Planorama schnell validieren.
 - Erkenntnisse über Nutzerbedürfnisse
 - Validierung der wichtigsten Funktionen
 - Iterationsgrundlage für die Weiterentwicklung 
+
+planorma-design.png
