@@ -6,8 +6,6 @@ join and edit together. Installable as a mobile app (PWA).
 
 🔗 **Live:** https://planorama-nine.vercel.app
 
-> Add 2 to 3 screenshots here (the map view and a trip itinerary make the strongest shots).
-
 ## What it does
 
 - **Trips and itineraries.** Organize a trip into daily itineraries with activities,
